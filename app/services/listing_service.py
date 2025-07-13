@@ -51,16 +51,31 @@ class ListingService:
         
         # Guardar resultados de agentes
         for agent_name, agent_response in agent_responses.items():
-            db_agent_result = AgentResult(
-                listing_id=db_listing.id,
-                agent_name=agent_response.agent_name,
-                status=agent_response.status,
-                confidence=agent_response.confidence,
-                processing_time=agent_response.processing_time,
-                agent_data=agent_response.data,
-                notes=agent_response.notes,
-                recommendations=agent_response.recommendations
-            )
+            # Manejar tanto objetos AgentResponse como diccionarios
+            if hasattr(agent_response, 'agent_name'):
+                # Es un objeto AgentResponse
+                db_agent_result = AgentResult(
+                    listing_id=db_listing.id,
+                    agent_name=agent_response.agent_name,
+                    status=agent_response.status,
+                    confidence=agent_response.confidence,
+                    processing_time=agent_response.processing_time,
+                    agent_data=agent_response.data,
+                    notes=agent_response.notes,
+                    recommendations=agent_response.recommendations
+                )
+            else:
+                # Es un diccionario
+                db_agent_result = AgentResult(
+                    listing_id=db_listing.id,
+                    agent_name=agent_response.get("agent_name", agent_name),
+                    status=agent_response.get("status", "completed"),
+                    confidence=agent_response.get("confidence", 0.0),
+                    processing_time=agent_response.get("processing_time", 0.0),
+                    agent_data=agent_response.get("data", {}),
+                    notes=agent_response.get("notes", []),
+                    recommendations=agent_response.get("recommendations", [])
+                )
             self.db.add(db_agent_result)
         
         # Crear primera versión

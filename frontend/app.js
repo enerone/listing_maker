@@ -263,6 +263,13 @@ function setupEventListeners() {
     // Generate listing
     document.getElementById('generateListing').addEventListener('click', generateListing);
     
+    // Generate AI suggestions
+    const generateSuggestionsBtn = document.getElementById('generateSuggestions');
+    if (generateSuggestionsBtn) {
+        generateSuggestionsBtn.addEventListener('click', generateAISuggestions);
+        console.log('✅ Event listener para generateSuggestions configurado');
+    }
+    
     // Final actions
     document.getElementById('backToStart').addEventListener('click', resetToStart);
     document.getElementById('saveListing').addEventListener('click', saveListing);

@@ -1,0 +1,69 @@
+{
+    "product_name": "Smartwatch Deportivo Pro X1",
+    "category": "Electronics",
+    "variants": [
+        {
+            "size": "42mm",
+            "color": "Negro",
+            "model": "Estándar",
+            "price_modifier": 0.0
+        },
+        {
+            "size": "46mm", 
+            "color": "Plateado",
+            "model": "Premium",
+            "price_modifier": 50.0
+        }
+    ],
+    "target_customer_description": "Personas activas entre 25-45 años que practican deportes regularmente y buscan monitorear su salud y rendimiento físico. Profesionales ocupados que valoran la tecnología que les ayude a mantener un estilo de vida saludable.",
+    "use_situations": [
+        "Durante entrenamientos y ejercicio físico",
+        "Monitoreo diario de salud y actividad",
+        "Seguimiento del sueño y recuperación",
+        "Notificaciones inteligentes durante el trabajo"
+    ],
+    "value_proposition": "El único smartwatch que combina seguimiento deportivo profesional con batería de 7 días y resistencia militar, diseñado para atletas serios que no quieren comprometer rendimiento por duración.",
+    "competitive_advantages": [
+        "Batería de ultra duración de 7 días con GPS activo",
+        "Resistencia militar MIL-STD-810G para condiciones extremas",
+        "100+ modos deportivos con métricas avanzadas",
+        "Análisis de recuperación y VO2 max profesional",
+        "Pantalla AMOLED siempre visible bajo el sol"
+    ],
+    "raw_specifications": "Pantalla: AMOLED 1.4\" 454x454px, Batería: 500mAh Li-ion, Resistencia: IP68 + MIL-STD-810G, Sensores: GPS dual band, frecuencia cardíaca óptica, SpO2, acelerómetro 3 ejes, giroscopio, brújula, altímetro barométrico. Conectividad: Bluetooth 5.2, WiFi. Materiales: Caja de aleación de titanio, correa de silicona deportiva. Dimensiones: 46x46x12.5mm, Peso: 52g",
+    "box_content_description": "1x Smartwatch Deportivo Pro X1, 1x Cable de carga magnético USB-C, 1x Correa deportiva adicional (talla L), 1x Manual de usuario en español, 1x Tarjeta de garantía, 1x Guía de inicio rápido",
+    "warranty_info": "Garantía internacional de 2 años por defectos de fabricación. Resistencia al agua garantizada por 1 año. Servicio técnico especializado en Argentina con repuestos originales.",
+    "certifications": [
+        "CE Europeo",
+        "FCC Estados Unidos", 
+        "ANMAT Argentina",
+        "MIL-STD-810G Militar",
+        "IP68 Resistencia al agua"
+    ],
+    "target_price": 299.99,
+    "pricing_strategy_notes": "Posicionamiento premium pero accesible. Competir con Apple Watch SE y Samsung Galaxy Watch 4. Estrategia de lanzamiento con 20% descuento primeros 30 días. Bundle con correa adicional por +$30.",
+    "target_keywords": [
+        "smartwatch deportivo",
+        "reloj inteligente",
+        "fitness tracker",
+        "monitor cardíaco",
+        "GPS running",
+        "batería larga duración",
+        "resistente agua",
+        "smartwatch hombre",
+        "reloj deportivo mujer",
+        "wearable fitness"
+    ],
+    "available_assets": [
+        "Fotos del producto en estudio con fondo blanco",
+        "Imágenes lifestyle durante ejercicio",
+        "Screenshots de la app móvil",
+        "Video demostrativo de 60 segundos"
+    ],
+    "asset_descriptions": [
+        "Fotos principales: 6 ángulos en alta resolución 4K",
+        "Lifestyle: Corriendo, gym, oficina, lifestyle casual",
+        "Infografías: Especificaciones técnicas y comparación",
+        "Video: Unboxing y features principales"
+    ]
+}

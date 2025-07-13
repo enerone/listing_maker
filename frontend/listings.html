@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Listings Creados - Amazon Listing Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="table-styles.css">
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-6">
+                <div class="flex items-center">
+                    <i class="fas fa-list-alt text-3xl text-blue-600 mr-3"></i>
+                    <h1 class="text-2xl font-bold text-gray-900">Listings Creados</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <a href="create-listing.html" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors">
+                        <i class="fas fa-plus mr-2"></i>Crear Nuevo Listing
+                    </a>
+                    <div class="flex items-center">
+                        <div class="w-3 h-3 rounded-full bg-green-400 mr-2" id="statusIndicator"></div>
+                        <span class="text-sm text-gray-600" id="systemStatus">Cargando...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white p-6 rounded-lg shadow">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-blue-100 text-blue-600">
+                        <i class="fas fa-list-alt"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-500">Total Listings</p>
+                        <p class="text-2xl font-semibold text-gray-900" id="totalListings">0</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white p-6 rounded-lg shadow">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-green-100 text-green-600">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-500">Publicados</p>
+                        <p class="text-2xl font-semibold text-gray-900" id="publishedListings">0</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white p-6 rounded-lg shadow">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-yellow-100 text-yellow-600">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-500">Borradores</p>
+                        <p class="text-2xl font-semibold text-gray-900" id="draftListings">0</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filters and Search -->
+        <div class="bg-white p-6 rounded-lg shadow mb-6">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
+                <div class="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4">
+                    <div>
+                        <input type="text" id="searchInput" placeholder="Buscar por nombre o título..." 
+                               class="w-full md:w-64 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                    <div>
+                        <select id="categoryFilter" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <option value="">Todas las categorías</option>
+                            <option value="Electronics">Electronics</option>
+                            <option value="Sports & Outdoors">Sports & Outdoors</option>
+                            <option value="Clothing, Shoes & Jewelry">Clothing, Shoes & Jewelry</option>
+                            <option value="Home & Garden">Home & Garden</option>
+                            <option value="Health & Personal Care">Health & Personal Care</option>
+                        </select>
+                    </div>
+                    <div>
+                        <select id="statusFilter" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <option value="">Todos los estados</option>
+                            <option value="draft">Borrador</option>
+                            <option value="published">Publicado</option>
+                            <option value="archived">Archivado</option>
+                        </select>
+                    </div>
+                </div>
+                <button onclick="loadListings()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors">
+                    <i class="fas fa-sync-alt mr-2"></i>Actualizar
+                </button>
+            </div>
+        </div>
+
+        <!-- Listings Table -->
+        <div class="bg-white rounded-lg shadow overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h3 class="text-lg font-medium text-gray-900">Lista de Listings</h3>
+            </div>
+            
+            <div id="loadingState" class="p-8 text-center">
+                <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                <p class="mt-2 text-gray-600">Cargando listings...</p>
+            </div>
+            
+            <div id="emptyState" class="p-8 text-center hidden">
+                <i class="fas fa-inbox text-4xl text-gray-400 mb-4"></i>
+                <h3 class="text-lg font-medium text-gray-900 mb-2">No hay listings</h3>
+                <p class="text-gray-600 mb-4">Aún no has creado ningún listing. ¡Crea tu primer listing ahora!</p>
+                <a href="create-listing.html" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors">
+                    <i class="fas fa-plus mr-2"></i>Crear Primer Listing
+                </a>
+            </div>
+            
+            <div id="listingsTable" class="hidden">
+                <!-- Simple table with guaranteed visible buttons -->
+                <div class="overflow-x-auto">
+                    <table class="listings-table min-w-full divide-y divide-gray-200 border-collapse">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border">Producto</th>
+                                <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border">Categoría</th>
+                                <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border">Precio</th>
+                                <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border">Estado</th>
+                                <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border">Fecha</th>
+                                <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border bg-yellow-100">🎯 ACCIONES</th>
+                            </tr>
+                        </thead>
+                        <tbody id="listingsTableBody" class="bg-white divide-y divide-gray-200">
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Mobile Cards -->
+                <div class="lg:hidden" id="listingsCards">
+                    <!-- Cards will be generated here -->
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-4 right-4 px-6 py-3 rounded-lg shadow-lg transform transition-transform duration-300 translate-y-full hidden">
+        <span id="toastMessage"></span>
+    </div>
+
+    <!-- Modal for listing details -->
+    <div id="listingModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden">
+        <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
+            <div class="mt-3">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-medium text-gray-900" id="modalTitle">Detalles del Listing</h3>
+                    <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600" title="Cerrar modal">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+                <div id="modalContent">
+                    <!-- Content will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="listings.js?v=4"></script>
+</body>
+</html>

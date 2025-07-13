@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detalles del Listing - Amazon Listing Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .tab-button.active { background-color: #3b82f6; color: white; }
+        .agent-result { border-left: 4px solid #e5e7eb; }
+        .agent-result.success { border-left-color: #10b981; }
+        .agent-result.partial { border-left-color: #f59e0b; }
+        .agent-result.error { border-left-color: #ef4444; }
+        
+        /* Estilos para recomendaciones aplicadas */
+        .recommendation-applied {
+            transition: all 0.3s ease;
+            animation: appliedPulse 0.5s ease-in-out;
+        }
+        
+        .recommendation-applied-item {
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        
+        .recommendation-applied-item::after {
+            content: '✓ Aplicada';
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: #10b981;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: bold;
+        }
+        
+        /* Animación para botón aplicado */
+        @keyframes appliedPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-6">
+                <div class="flex items-center">
+                    <a href="/listings.html" class="text-blue-600 hover:text-blue-800 mr-4">
+                        <i class="fas fa-arrow-left mr-2"></i>Volver a Listings
+                    </a>
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900">Detalles del Listing</h1>
+                        <p class="text-sm text-gray-600">Vista completa del listing generado</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button onclick="exportListing()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors">
+                        <i class="fas fa-download mr-2"></i>Exportar
+                    </button>
+                    <button onclick="editListing()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors">
+                        <i class="fas fa-edit mr-2"></i>Editar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Listing Header -->
+        <div class="bg-white rounded-lg shadow p-6 mb-6">
+            <div class="flex items-start justify-between">
+                <div class="flex-1">
+                    <div class="flex items-center mb-4">
+                        <span id="listingId" class="bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-sm font-medium mr-4">ID: #</span>
+                        <span id="listingStatus" class="px-3 py-1 rounded-full text-sm font-medium">Status</span>
+                        <span id="listingConfidence" class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium ml-4">Confianza: 0%</span>
+                    </div>
+                    <h2 id="listingTitle" class="text-2xl font-bold text-gray-900 mb-2">Título del Listing</h2>
+                    <p id="listingProductName" class="text-lg text-gray-600 mb-4">Nombre del Producto</p>
+                    <div class="flex items-center space-x-6">
+                        <div class="flex items-center">
+                            <i class="fas fa-tag text-gray-400 mr-2"></i>
+                            <span id="listingCategory" class="text-gray-700">Categoría</span>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-dollar-sign text-gray-400 mr-2"></i>
+                            <span id="listingPrice" class="text-gray-700">$0.00</span>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-calendar text-gray-400 mr-2"></i>
+                            <span id="listingDate" class="text-gray-700">Fecha</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs Navigation -->
+        <div class="bg-white rounded-lg shadow mb-6">
+            <div class="border-b border-gray-200">
+                <nav class="flex space-x-8 px-6">
+                    <button onclick="showTab('overview')" class="tab-button py-4 px-1 border-b-2 border-transparent font-medium text-sm hover:text-gray-700 hover:border-gray-300 active">
+                        <i class="fas fa-eye mr-2"></i>Vista General
+                    </button>
+                    <button onclick="showTab('content')" class="tab-button py-4 px-1 border-b-2 border-transparent font-medium text-sm hover:text-gray-700 hover:border-gray-300">
+                        <i class="fas fa-file-text mr-2"></i>Contenido
+                    </button>
+                    <button onclick="showTab('seo')" class="tab-button py-4 px-1 border-b-2 border-transparent font-medium text-sm hover:text-gray-700 hover:border-gray-300">
+                        <i class="fas fa-search mr-2"></i>SEO & Keywords
+                    </button>
+                    <button onclick="showTab('agents')" class="tab-button py-4 px-1 border-b-2 border-transparent font-medium text-sm hover:text-gray-700 hover:border-gray-300">
+                        <i class="fas fa-robot mr-2"></i>Agentes IA
+                    </button>
+                    <button onclick="showTab('raw')" class="tab-button py-4 px-1 border-b-2 border-transparent font-medium text-sm hover:text-gray-700 hover:border-gray-300">
+                        <i class="fas fa-code mr-2"></i>Datos Raw
+                    </button>
+                </nav>
+            </div>
+
+            <!-- Tab Content -->
+            <div class="p-6">
+                <!-- Overview Tab -->
+                <div id="overview" class="tab-content active">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- Bullet Points -->
+                        <div class="bg-gray-50 rounded-lg p-6">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                                <i class="fas fa-list mr-2 text-blue-600"></i>Puntos Clave
+                            </h3>
+                            <ul id="bulletPoints" class="space-y-2">
+                                <!-- Bullet points will be populated here -->
+                            </ul>
+                        </div>
+
+                        <!-- Recommendations -->
+                        <div class="bg-gray-50 rounded-lg p-6">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                                <i class="fas fa-lightbulb mr-2 text-yellow-600"></i>Recomendaciones
+                            </h3>
+                            <ul id="recommendations" class="space-y-2">
+                                <!-- Recommendations will be populated here -->
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Description -->
+                    <div class="mt-6 bg-white border rounded-lg p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                            <i class="fas fa-align-left mr-2 text-green-600"></i>Descripción del Producto
+                        </h3>
+                        <div id="productDescription" class="prose max-w-none text-gray-700 whitespace-pre-wrap">
+                            <!-- Description will be populated here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Content Tab -->
+                <div id="content" class="tab-content">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- Input Data -->
+                        <div class="bg-gray-50 rounded-lg p-6">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                                <i class="fas fa-upload mr-2 text-blue-600"></i>Datos de Entrada
+                            </h3>
+                            <div id="inputData" class="space-y-4">
+                                <!-- Input data will be populated here -->
+                            </div>
+                        </div>
+
+                        <!-- Processing Notes -->
+                        <div class="bg-gray-50 rounded-lg p-6">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                                <i class="fas fa-sticky-note mr-2 text-yellow-600"></i>Notas de Procesamiento
+                            </h3>
+                            <ul id="processingNotes" class="space-y-2">
+                                <!-- Processing notes will be populated here -->
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SEO Tab -->
+                <div id="seo" class="tab-content">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- Search Terms -->
+                        <div class="bg-gray-50 rounded-lg p-6">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                                <i class="fas fa-search mr-2 text-blue-600"></i>Términos de Búsqueda
+                            </h3>
+                            <div id="searchTerms" class="space-y-4">
+                                <!-- Search terms will be populated here -->
+                            </div>
+                        </div>
+
+                        <!-- Backend Keywords -->
+                        <div class="bg-gray-50 rounded-lg p-6">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                                <i class="fas fa-tags mr-2 text-green-600"></i>Keywords Backend
+                            </h3>
+                            <div id="backendKeywords" class="space-y-2">
+                                <!-- Backend keywords will be populated here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Agents Tab -->
+                <div id="agents" class="tab-content">
+                    <div class="space-y-6">
+                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                            <h3 class="text-lg font-semibold text-blue-900 mb-2">
+                                <i class="fas fa-info-circle mr-2"></i>Resultados de Agentes IA
+                            </h3>
+                            <p class="text-blue-800 text-sm">
+                                Aquí puedes ver los resultados detallados de cada agente de IA que procesó este listing.
+                            </p>
+                        </div>
+                        <div id="agentResults" class="space-y-4">
+                            <!-- Agent results will be populated here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Raw Data Tab -->
+                <div id="raw" class="tab-content">
+                    <div class="bg-gray-50 rounded-lg p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                            <i class="fas fa-database mr-2 text-purple-600"></i>Datos Raw JSON
+                        </h3>
+                        <div class="bg-black rounded-lg p-4 overflow-x-auto">
+                            <pre id="rawData" class="text-green-400 text-sm whitespace-pre-wrap">
+                                <!-- Raw data will be populated here -->
+                            </pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-4 right-4 px-6 py-3 rounded-lg shadow-lg transform transition-transform duration-300 translate-y-full hidden">
+        <span id="toastMessage"></span>
+    </div>
+
+    <script>
+        // Global variables
+        let currentListing = null;
+        const API_BASE_URL = 'http://localhost:8000';
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const listingId = urlParams.get('id');
+            
+            if (listingId) {
+                loadListingDetails(listingId);
+            } else {
+                showToast('No se especificó ID de listing', 'error');
+            }
+        });
+
+        // Load listing details
+        async function loadListingDetails(listingId) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/listings/${listingId}`);
+                if (!response.ok) throw new Error('Error al cargar listing');
+                
+                const data = await response.json();
+                currentListing = data.listing;
+                
+                populateListingDetails(data.listing);
+                populateAgentResults(data.agent_results || []);
+                
+                showToast('Listing cargado exitosamente', 'success');
+            } catch (error) {
+                console.error('Error loading listing:', error);
+                showToast('Error al cargar el listing', 'error');
+            }
+        }
+
+        // Populate listing details
+        function populateListingDetails(listing) {
+            // Header information
+            document.getElementById('listingId').textContent = `ID: #${listing.id}`;
+            document.getElementById('listingTitle').textContent = listing.title || 'Sin título';
+            document.getElementById('listingProductName').textContent = listing.product_name || 'Sin nombre';
+            document.getElementById('listingCategory').textContent = (listing.category || '').replace('ProductCategory.', '');
+            document.getElementById('listingPrice').textContent = `$${listing.target_price || 0}`;
+            document.getElementById('listingDate').textContent = new Date(listing.created_at).toLocaleDateString('es-ES');
+            
+            // Status and confidence
+            const statusEl = document.getElementById('listingStatus');
+            const status = listing.status || 'unknown';
+            statusEl.className = `px-3 py-1 rounded-full text-sm font-medium ${getStatusClass(status)}`;
+            statusEl.textContent = status.charAt(0).toUpperCase() + status.slice(1);
+            
+            const confidenceEl = document.getElementById('listingConfidence');
+            const confidence = Math.round((listing.confidence_score || 0) * 100);
+            confidenceEl.textContent = `Confianza: ${confidence}%`;
+            confidenceEl.className = `px-3 py-1 rounded-full text-sm font-medium ${getConfidenceClass(confidence)}`;
+
+            // Bullet points
+            const bulletPointsEl = document.getElementById('bulletPoints');
+            if (listing.bullet_points && listing.bullet_points.length > 0) {
+                bulletPointsEl.innerHTML = listing.bullet_points.map(point => 
+                    `<li class="flex items-start"><i class="fas fa-check text-green-500 mr-2 mt-1"></i><span class="text-sm text-gray-700">${point}</span></li>`
+                ).join('');
+            } else {
+                bulletPointsEl.innerHTML = '<li class="text-gray-500 text-sm">No hay puntos clave disponibles</li>';
+            }
+
+            // Recommendations
+            const recommendationsEl = document.getElementById('recommendations');
+            if (listing.recommendations && listing.recommendations.length > 0) {
+                recommendationsEl.innerHTML = listing.recommendations.map((rec, index) => 
+                    `<li class="flex items-start justify-between p-3 bg-yellow-50 rounded-lg border border-yellow-200 mb-2">
+                        <div class="flex items-start flex-1">
+                            <i class="fas fa-lightbulb text-yellow-500 mr-2 mt-1"></i>
+                            <span class="text-sm text-gray-700">${rec}</span>
+                        </div>
+                        <button onclick="applyRecommendation('General', ${index}, '${rec.replace(/'/g, "\\'")}', '${getCurrentListingId()}')" 
+                                class="ml-3 px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs rounded-lg transition-colors flex items-center"
+                                title="Aplicar esta recomendación">
+                            <i class="fas fa-magic-wand-sparkles mr-1"></i>
+                            Aplicar
+                        </button>
+                    </li>`
+                ).join('');
+            } else {
+                recommendationsEl.innerHTML = '<li class="text-gray-500 text-sm">No hay recomendaciones disponibles</li>';
+            }
+
+            // Description
+            const descriptionEl = document.getElementById('productDescription');
+            descriptionEl.textContent = listing.description || 'No hay descripción disponible';
+
+            // Input data
+            const inputDataEl = document.getElementById('inputData');
+            if (listing.input_data) {
+                const inputData = listing.input_data;
+                inputDataEl.innerHTML = `
+                    <div class="space-y-3">
+                        <div><strong>Propuesta de Valor:</strong> ${inputData.value_proposition || 'N/A'}</div>
+                        <div><strong>Cliente Objetivo:</strong> ${inputData.target_customer_description || 'N/A'}</div>
+                        <div><strong>Especificaciones:</strong> ${inputData.raw_specifications || 'N/A'}</div>
+                        <div><strong>Contenido de la Caja:</strong> ${inputData.box_content_description || 'N/A'}</div>
+                        <div><strong>Garantía:</strong> ${inputData.warranty_info || 'N/A'}</div>
+                    </div>
+                `;
+            } else {
+                inputDataEl.innerHTML = '<div class="text-gray-500 text-sm">No hay datos de entrada disponibles</div>';
+            }
+
+            // Processing notes
+            const processingNotesEl = document.getElementById('processingNotes');
+            if (listing.processing_notes && listing.processing_notes.length > 0) {
+                processingNotesEl.innerHTML = listing.processing_notes.map(note => 
+                    `<li class="flex items-start"><i class="fas fa-info-circle text-blue-500 mr-2 mt-1"></i><span class="text-sm text-gray-700">${note}</span></li>`
+                ).join('');
+            } else {
+                processingNotesEl.innerHTML = '<li class="text-gray-500 text-sm">No hay notas de procesamiento</li>';
+            }
+
+            // Search terms
+            const searchTermsEl = document.getElementById('searchTerms');
+            if (listing.search_terms && listing.search_terms.length > 0) {
+                searchTermsEl.innerHTML = `
+                    <div class="flex flex-wrap gap-2">
+                        ${listing.search_terms.map(term => 
+                            `<span class="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">${term}</span>`
+                        ).join('')}
+                    </div>
+                `;
+            } else {
+                searchTermsEl.innerHTML = '<div class="text-gray-500 text-sm">No hay términos de búsqueda</div>';
+            }
+
+            // Backend keywords
+            const backendKeywordsEl = document.getElementById('backendKeywords');
+            if (listing.backend_keywords && listing.backend_keywords.length > 0) {
+                backendKeywordsEl.innerHTML = `
+                    <div class="flex flex-wrap gap-2">
+                        ${listing.backend_keywords.map(keyword => 
+                            `<span class="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">${keyword}</span>`
+                        ).join('')}
+                    </div>
+                `;
+            } else {
+                backendKeywordsEl.innerHTML = '<div class="text-gray-500 text-sm">No hay keywords backend</div>';
+            }
+
+            // Raw data
+            const rawDataEl = document.getElementById('rawData');
+            rawDataEl.textContent = JSON.stringify(listing, null, 2);
+        }
+
+        // Populate agent results
+        function populateAgentResults(agentResults) {
+            const agentResultsEl = document.getElementById('agentResults');
+            
+            if (agentResults.length === 0) {
+                agentResultsEl.innerHTML = '<div class="text-gray-500 text-sm">No hay resultados de agentes disponibles</div>';
+                return;
+            }
+
+            agentResultsEl.innerHTML = agentResults.map(agent => {
+                const statusClass = agent.status === 'success' ? 'success' : 
+                                   agent.status === 'partial' ? 'partial' : 'error';
+                const statusIcon = agent.status === 'success' ? 'check-circle' : 
+                                  agent.status === 'partial' ? 'exclamation-triangle' : 'times-circle';
+                
+                return `
+                    <div class="agent-result ${statusClass} bg-white rounded-lg p-4 pl-6">
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center">
+                                <i class="fas fa-${statusIcon} mr-2 ${statusClass === 'success' ? 'text-green-600' : statusClass === 'partial' ? 'text-yellow-600' : 'text-red-600'}"></i>
+                                <h4 class="font-semibold text-gray-900">${agent.agent_name}</h4>
+                            </div>
+                            <div class="flex items-center space-x-4">
+                                <span class="text-sm text-gray-500">Confianza: ${Math.round((agent.confidence || 0) * 100)}%</span>
+                                <span class="text-sm text-gray-500">Tiempo: ${agent.processing_time?.toFixed(2) || 0}s</span>
+                            </div>
+                        </div>
+                        ${agent.recommendations && agent.recommendations.length > 0 ? `
+                            <div class="mb-3">
+                                <h5 class="font-medium text-gray-700 mb-2">Recomendaciones:</h5>
+                                <div class="space-y-2">
+                                    ${agent.recommendations.map((rec, index) => `
+                                        <div class="flex items-start justify-between p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                                            <div class="flex items-start flex-1">
+                                                <i class="fas fa-lightbulb text-yellow-500 mr-2 mt-1"></i>
+                                                <span class="text-sm text-gray-700">${rec}</span>
+                                            </div>
+                                            <button onclick="applyRecommendation('${agent.agent_name}', ${index}, '${rec.replace(/'/g, "\\'")}', '${getCurrentListingId()}')" 
+                                                    class="ml-3 px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs rounded-lg transition-colors flex items-center"
+                                                    title="Aplicar esta recomendación">
+                                                <i class="fas fa-magic-wand-sparkles mr-1"></i>
+                                                Aplicar
+                                            </button>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        ` : ''}
+                        ${agent.notes && agent.notes.length > 0 ? `
+                            <div>
+                                <h5 class="font-medium text-gray-700 mb-2">Notas:</h5>
+                                <ul class="text-sm text-gray-600 space-y-1">
+                                    ${agent.notes.map(note => `<li>• ${note}</li>`).join('')}
+                                </ul>
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Tab functionality
+        function showTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Remove active class from all buttons
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+            
+            // Add active class to clicked button
+            event.target.classList.add('active');
+        }
+
+        // Utility functions
+        function getStatusClass(status) {
+            switch (status) {
+                case 'published': return 'bg-green-100 text-green-800';
+                case 'draft': return 'bg-yellow-100 text-yellow-800';
+                case 'archived': return 'bg-gray-100 text-gray-800';
+                default: return 'bg-gray-100 text-gray-800';
+            }
+        }
+
+        function getConfidenceClass(confidence) {
+            if (confidence >= 80) return 'bg-green-100 text-green-800';
+            if (confidence >= 60) return 'bg-yellow-100 text-yellow-800';
+            return 'bg-red-100 text-red-800';
+        }
+
+        function exportListing() {
+            if (!currentListing) {
+                showToast('No hay listing para exportar', 'error');
+                return;
+            }
+
+            const dataStr = JSON.stringify(currentListing, null, 2);
+            const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+            
+            const exportFileDefaultName = `listing_${currentListing.id}_${new Date().toISOString().split('T')[0]}.json`;
+            
+            const linkElement = document.createElement('a');
+            linkElement.setAttribute('href', dataUri);
+            linkElement.setAttribute('download', exportFileDefaultName);
+            linkElement.click();
+            
+            showToast('Listing exportado exitosamente', 'success');
+        }
+
+        function editListing() {
+            if (!currentListing) {
+                showToast('No hay listing para editar', 'error');
+                return;
+            }
+            
+            // Redirect to edit page (to be implemented)
+            showToast('Función de edición en desarrollo', 'info');
+        }
+
+        // Function to get current listing ID
+        function getCurrentListingId() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get('id');
+        }
+
+        // Function to apply a recommendation
+        async function applyRecommendation(agentName, recommendationIndex, recommendationText, listingId) {
+            console.log('🪄 Aplicando recomendación:', {
+                agentName,
+                recommendationIndex,
+                recommendationText,
+                listingId
+            });
+
+            // Show loading state
+            const button = event.target.closest('button');
+            const originalContent = button.innerHTML;
+            // Check if already applied
+            if (button.classList.contains('recommendation-applied')) {
+                showToast('Esta recomendación ya fue aplicada', 'info');
+                return;
+            }
+            button.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Aplicando...';
+            button.disabled = true;
+
+            try {
+                // Call API to apply recommendation
+                const response = await fetch(`${API_BASE_URL}/api/listings/${listingId}/apply-recommendation`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        agent_name: agentName,
+                        recommendation_index: recommendationIndex,
+                        recommendation_text: recommendationText
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Error ${response.status}: ${response.statusText}`);
+                }
+
+                const result = await response.json();
+                
+                // Show success message
+                showToast('✅ Recomendación aplicada exitosamente', 'success');
+                // Update button to permanent applied state
+                button.innerHTML = '<i class="fas fa-check-circle mr-1"></i>Aplicada';
+                button.classList.add('recommendation-applied');
+                button.classList.remove('bg-blue-500', 'hover:bg-blue-600');
+                button.classList.add('bg-green-500', 'hover:bg-green-600', 'cursor-default');
+                button.disabled = true;
+                // Add tooltip to show when it was applied
+                const now = new Date().toLocaleString('es-ES');
+                button.title = `Aplicada el ${now}`;
+                // Add visual feedback to the recommendation container
+                const listItem = button.closest('li, .flex');
+                if (listItem) {
+                    listItem.classList.add('recommendation-applied-item');
+                    listItem.style.backgroundColor = '#f0fdf4';
+                    listItem.style.borderColor = '#10b981';
+                    listItem.style.borderWidth = '2px';
+                }
+                
+                // Optional: Show detailed result in console for debugging
+                console.log('Recomendación aplicada:', result);
+
+            } catch (error) {
+                console.error('Error applying recommendation:', error);
+                showToast(`❌ Error al aplicar recomendación: ${error.message}`, 'error');
+                
+                // Restore button on error
+                button.innerHTML = originalContent;
+                button.disabled = false;
+            }
+        }
+
+        // Function to show toast notifications
+        function showToast(message, type = 'info') {
+            // Create toast if it doesn't exist
+            let toast = document.getElementById('recommendationToast');
+            if (!toast) {
+                toast = document.createElement('div');
+                toast.id = 'recommendationToast';
+                toast.className = 'fixed bottom-4 right-4 px-6 py-3 rounded-lg shadow-lg transform transition-transform duration-300 translate-y-full z-50';
+                document.body.appendChild(toast);
+            }
+
+            // Set message and style
+            toast.textContent = message;
+            
+            let bgColor;
+            switch(type) {
+                case 'success': bgColor = 'bg-green-500 text-white'; break;
+                case 'error': bgColor = 'bg-red-500 text-white'; break;
+                case 'warning': bgColor = 'bg-yellow-500 text-white'; break;
+                default: bgColor = 'bg-blue-500 text-white'; break;
+            }
+            
+            toast.className = `fixed bottom-4 right-4 px-6 py-3 rounded-lg shadow-lg transform transition-transform duration-300 z-50 ${bgColor}`;
+            
+            // Show toast
+            toast.classList.remove('translate-y-full');
+            
+            // Hide after 4 seconds
+            setTimeout(() => {
+                toast.classList.add('translate-y-full');
+            }, 4000);
+        }
+    </script>
+</body>
+</html>

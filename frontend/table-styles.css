@@ -1,0 +1,93 @@
+/* Table layout optimization for better visibility */
+.listings-table {
+    table-layout: fixed;
+    width: 100%;
+    min-width: 800px;
+}
+
+.listings-table th:nth-child(1) { width: 25%; }  /* Producto */
+.listings-table th:nth-child(2) { width: 12%; }  /* Categoría */
+.listings-table th:nth-child(3) { width: 8%; }   /* Precio */
+.listings-table th:nth-child(4) { width: 15%; }  /* Confianza */
+.listings-table th:nth-child(5) { width: 10%; }  /* Estado */
+.listings-table th:nth-child(6) { width: 12%; }  /* Fecha */
+.listings-table th:nth-child(7) { width: 18%; }  /* Acciones */
+
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+    .listings-table {
+        min-width: 700px;
+    }
+    
+    .listings-table th:nth-child(1) { width: 30%; }
+    .listings-table th:nth-child(2) { width: 10%; }
+    .listings-table th:nth-child(3) { width: 8%; }
+    .listings-table th:nth-child(4) { width: 12%; }
+    .listings-table th:nth-child(5) { width: 8%; }
+    .listings-table th:nth-child(6) { width: 10%; }
+    .listings-table th:nth-child(7) { width: 22%; }
+}
+
+@media (max-width: 768px) {
+    .listings-table {
+        min-width: 600px;
+    }
+    
+    .listings-table th:nth-child(1) { width: 35%; }
+    .listings-table th:nth-child(2) { width: 8%; }
+    .listings-table th:nth-child(3) { width: 8%; }
+    .listings-table th:nth-child(4) { width: 10%; }
+    .listings-table th:nth-child(5) { width: 8%; }
+    .listings-table th:nth-child(6) { width: 8%; }
+    .listings-table th:nth-child(7) { width: 25%; }
+}
+
+/* Action buttons optimization */
+.action-buttons {
+    display: flex;
+    gap: 4px;
+    justify-content: center;
+    flex-wrap: nowrap;
+}
+
+.action-buttons button {
+    flex-shrink: 0;
+    min-width: 24px;
+    height: 24px;
+    padding: 4px;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.action-buttons button:hover {
+    transform: scale(1.1);
+}
+
+/* Ensure table container allows horizontal scroll */
+.table-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Improve text truncation */
+.truncate-text {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+/* Confidence bar improvements */
+.confidence-bar {
+    min-width: 40px;
+    max-width: 80px;
+}
+
+/* Status badge improvements */
+.status-badge {
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+}

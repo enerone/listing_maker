@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚀 Creador de Listings para Amazon - IA</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="styles.css" rel="stylesheet">
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .step-card {
+            transition: all 0.3s ease;
+            border-left: 4px solid #e5e7eb;
+        }
+        .step-card.active {
+            border-left-color: #3b82f6;
+            background: linear-gradient(135deg, #eff6ff 0%, #f0f9ff 100%);
+        }
+        .step-card.completed {
+            border-left-color: #10b981;
+            background: linear-gradient(135deg, #ecfdf5 0%, #f0fdf4 100%);
+        }
+        .loader {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        /* Mejoras críticas de contraste - Override Tailwind */
+        h1, h2, h3, h4, h5, h6 {
+            color: #111827 !important;
+            font-weight: 800 !important;
+        }
+        
+        label {
+            color: #111827 !important;
+            font-weight: 700 !important;
+        }
+        
+        p {
+            color: #374151 !important;
+            font-weight: 600 !important;
+        }
+        
+        input, textarea, select {
+            color: #111827 !important;
+            font-weight: 500 !important;
+            border: 2px solid #d1d5db !important;
+        }
+        
+        input::placeholder, textarea::placeholder {
+            color: #6b7280 !important;
+            font-weight: 500 !important;
+        }
+        
+        .text-blue-600 {
+            color: #1d4ed8 !important;
+            font-weight: 700 !important;
+        }
+        
+        .text-red-600 {
+            color: #dc2626 !important;
+            font-weight: 700 !important;
+        }
+        
+        .gradient-bg h1, .gradient-bg p, .gradient-bg span {
+            color: #ffffff !important;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            font-weight: 700 !important;
+        }
+        
+        /* Sobrescribir clases específicas de Tailwind */
+        .text-gray-700 {
+            color: #374151 !important;
+            font-weight: 600 !important;
+        }
+        
+        .text-gray-800 {
+            color: #111827 !important;
+            font-weight: 700 !important;
+        }
+        
+        .text-gray-900 {
+            color: #111827 !important;
+            font-weight: 800 !important;
+        }
+        
+        .text-sm {
+            font-weight: 700 !important;
+        }
+        
+        /* Forzar fondos y contrastes específicos */
+        .step-content {
+            background-color: #ffffff !important;
+            border: 2px solid #e5e7eb !important;
+        }
+        
+        .step-content h2 {
+            color: #111827 !important;
+            background-color: transparent !important;
+            text-shadow: none !important;
+        }
+        
+        .step-content p {
+            color: #374151 !important;
+            background-color: transparent !important;
+        }
+        
+        .step-content label {
+            color: #111827 !important;
+            background-color: transparent !important;
+        }
+        
+        /* Forzar que ningún contenedor principal tenga fondo azul */
+        .lg\\:col-span-3 {
+            background-color: #ffffff !important;
+        }
+        
+        /* Asegurar que todos los contenedores tengan fondo blanco */
+        .lg\\:col-span-3 > div {
+            background-color: #ffffff !important;
+        }
+        
+        /* Sobrescribir cualquier clase de Tailwind que pueda estar causando problemas */
+        .bg-white {
+            background-color: #ffffff !important;
+        }
+        
+        .text-gray-900 {
+            color: #111827 !important;
+            font-weight: 800 !important;
+        }
+        
+        .text-gray-800 {
+            color: #1f2937 !important;
+            font-weight: 700 !important;
+        }
+        
+        .text-gray-700 {
+            color: #374151 !important;
+            font-weight: 600 !important;
+        }
+        
+        /* Forzar colores específicos para todos los textos en contenido de pasos */
+        #content-step-1, #content-step-2, #content-step-3, #content-step-4, #content-step-5 {
+            background-color: #ffffff !important;
+        }
+        
+        #content-step-1 h2, #content-step-2 h2, #content-step-3 h2, #content-step-4 h2, #content-step-5 h2 {
+            color: #111827 !important;
+            font-weight: 800 !important;
+        }
+        
+        #content-step-1 p, #content-step-2 p, #content-step-3 p, #content-step-4 p, #content-step-5 p {
+            color: #374151 !important;
+            font-weight: 600 !important;
+        }
+        
+        #content-step-1 label, #content-step-2 label, #content-step-3 label, #content-step-4 label, #content-step-5 label {
+            color: #111827 !important;
+            font-weight: 700 !important;
+        }
+        
+        /* Eliminar cualquier sombra o efecto que pueda estar oscureciendo el contenido */
+        .shadow-lg {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+        }
+        
+        /* Asegurar que no hay overlays o pseudo-elementos que estén oscureciendo */
+        .step-content::before,
+        .step-content::after {
+            display: none !important;
+        }
+        
+        /* Forzar transparencia en cualquier elemento que pueda estar superpuesto */
+        .step-content * {
+            background-color: transparent !important;
+        }
+        
+        /* Excepciones para elementos que SÍ necesitan fondo */
+        .step-content input,
+        .step-content textarea,
+        .step-content select,
+        .step-content button {
+            background-color: #ffffff !important;
+        }
+        
+        .step-content button[class*="bg-blue"] {
+            background-color: #2563eb !important;
+        }
+        
+        .step-content button[class*="bg-green"] {
+            background-color: #059669 !important;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Header -->
+    <header class="gradient-bg text-white shadow-lg">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <i class="fas fa-robot text-2xl"></i>
+                    <h1 class="text-2xl font-bold">Creador de Listings Amazon IA</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <a href="index.html" class="bg-gray-700 hover:bg-gray-800 text-white px-3 py-1 rounded text-sm transition-colors">
+                        <i class="fas fa-home mr-1"></i>Dashboard
+                    </a>
+                    <a href="listings.html" class="bg-gray-700 hover:bg-gray-800 text-white px-3 py-1 rounded text-sm transition-colors">
+                        <i class="fas fa-list mr-1"></i>Listings
+                    </a>
+                    <span id="systemStatus" class="text-sm font-semibold">Verificando sistema...</span>
+                    <div id="statusIndicator" class="w-3 h-3 rounded-full bg-yellow-400 pulse"></div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container mx-auto px-6 py-8">
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+            <!-- Sidebar - Pasos del proceso -->
+            <div class="lg:col-span-1">
+                <div class="bg-white rounded-lg shadow-md p-6 sticky top-8">
+                    <h2 class="text-lg font-semibold mb-4 text-gray-800">Proceso de Creación</h2>
+                    <div class="space-y-3">
+                        <div id="step-1" class="step-card p-3 rounded-lg cursor-pointer active">
+                            <div class="flex items-center space-x-3">
+                                <div class="step-number w-6 h-6 rounded-full bg-blue-500 text-white text-xs flex items-center justify-center">1</div>
+                                <span class="text-sm font-medium">Información Básica</span>
+                            </div>
+                        </div>
+                        <div id="step-2" class="step-card p-3 rounded-lg cursor-pointer">
+                            <div class="flex items-center space-x-3">
+                                <div class="step-number w-6 h-6 rounded-full bg-gray-600 text-white text-xs flex items-center justify-center font-semibold">2</div>
+                                <span class="text-sm font-medium">Especificaciones</span>
+                            </div>
+                        </div>
+                        <div id="step-3" class="step-card p-3 rounded-lg cursor-pointer">
+                            <div class="flex items-center space-x-3">
+                                <div class="step-number w-6 h-6 rounded-full bg-gray-600 text-white text-xs flex items-center justify-center font-semibold">3</div>
+                                <span class="text-sm font-medium">Target & Precio</span>
+                            </div>
+                        </div>
+                        <div id="step-4" class="step-card p-3 rounded-lg cursor-pointer">
+                            <div class="flex items-center space-x-3">
+                                <div class="step-number w-6 h-6 rounded-full bg-gray-600 text-white text-xs flex items-center justify-center font-semibold">4</div>
+                                <span class="text-sm font-medium">Revisión</span>
+                            </div>
+                        </div>
+                        <div id="step-5" class="step-card p-3 rounded-lg cursor-pointer">
+                            <div class="flex items-center space-x-3">
+                                <div class="step-number w-6 h-6 rounded-full bg-gray-600 text-white text-xs flex items-center justify-center font-semibold">5</div>
+                                <span class="text-sm font-medium">Listing Generado</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="lg:col-span-3">
+                <!-- Step 1: Información Básica -->
+                <div id="content-step-1" class="step-content bg-white rounded-lg shadow-lg p-8 border border-gray-200">
+                    <div class="mb-6">
+                        <h2 class="text-2xl font-bold text-gray-900 mb-2">🏷️ Información Básica del Producto</h2>
+                        <p class="text-gray-700 font-medium">Comencemos con la información esencial de tu producto</p>
+                    </div>
+
+                    <div class="space-y-6">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-800 mb-2">Nombre del Producto *</label>
+                            <input type="text" id="productName" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Ej: Smartwatch Deportivo Pro X1">
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-800 mb-2">Categoría Principal *</label>
+                                <select id="category" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    <option value="">Seleccionar categoría</option>
+                                    <option value="Electronics">Electronics</option>
+                                    <option value="Sports & Outdoors">Sports & Outdoors</option>
+                                    <option value="Home & Garden">Home & Garden</option>
+                                    <option value="Health & Personal Care">Health & Personal Care</option>
+                                    <option value="Tools & Home Improvement">Tools & Home Improvement</option>
+                                    <option value="Automotive">Automotive</option>
+                                    <option value="Clothing & Accessories">Clothing & Accessories</option>
+                                    <option value="Office Products">Office Products</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Marca</label>
+                                <input type="text" id="brand" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Ej: TechPro">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Descripción del Producto *</label>
+                            <textarea id="description" rows="4" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Describe tu producto, sus características principales y qué problema resuelve..."></textarea>
+                        </div>
+
+                        <!-- Botón de Sugerencias con IA -->
+                        <div class="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-lg border border-blue-200">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h3 class="text-sm font-medium text-gray-900 mb-1">
+                                        <i class="fas fa-magic text-blue-600 mr-2"></i>Sugerencias Inteligentes
+                                    </h3>
+                                    <p class="text-xs text-gray-600">Nuestra IA puede completar automáticamente todos los campos basándose en tu producto</p>
+                                </div>
+                                <button id="generateSuggestions" 
+                                        onclick="generateAISuggestions()" 
+                                        class="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none">
+                                    <span id="suggestionsButtonText">
+                                        <i class="fas fa-sparkles mr-2"></i>Generar Sugerencias
+                                    </span>
+                                    <span id="suggestionsButtonLoading" class="hidden">
+                                        <i class="fas fa-spinner fa-spin mr-2"></i>Generando...
+                                    </span>
+                                </button>
+                            </div>
+                            <div id="suggestionsStatus" class="mt-3 text-xs text-gray-500 hidden">
+                                <i class="fas fa-info-circle mr-1"></i>
+                                <span id="suggestionsStatusText"></span>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Características Principales</label>
+                            <div id="featuresContainer" class="space-y-2">
+                                <div class="flex items-center space-x-2">
+                                    <input type="text" class="feature-input w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Ej: Batería de 7 días de duración">
+                                    <button type="button" class="text-red-600 hover:text-red-800 px-2 py-1" onclick="this.parentElement.remove()">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <button type="button" id="addFeature" class="mt-2 text-blue-600 hover:text-blue-800 text-sm font-medium">
+                                <i class="fas fa-plus mr-1"></i> Agregar característica
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end mt-8">
+                        <button id="nextStep1" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+                            Siguiente: Especificaciones <i class="fas fa-arrow-right ml-2"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Step 2: Especificaciones -->
+                <div id="content-step-2" class="step-content bg-white rounded-lg shadow-lg p-8 border border-gray-200 hidden">
+                    <div class="mb-6">
+                        <h2 class="text-2xl font-bold text-gray-900 mb-2">🔧 Especificaciones Técnicas</h2>
+                        <p class="text-gray-700 font-medium">Detalles técnicos y físicos del producto</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Dimensiones</label>
+                            <input type="text" id="dimensions" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Ej: 42 x 36 x 10.5 mm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Peso</label>
+                            <input type="text" id="weight" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Ej: 45g">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Materiales</label>
+                            <input type="text" id="materials" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Ej: Aluminio, Silicona">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Color</label>
+                            <input type="text" id="color" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Ej: Negro">
+                        </div>
+                    </div>
+
+                    <div class="mt-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Compatibilidad</label>
+                        <textarea id="compatibility" rows="3" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Describe con qué dispositivos o sistemas es compatible..."></textarea>
+                    </div>
+
+                    <div class="mt-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Contenido de la Caja</label>
+                        <div id="boxContentsContainer" class="space-y-2">
+                            <div class="flex items-center space-x-2">
+                                <input type="text" class="box-content-input w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Ej: 1x Smartwatch">
+                                <button type="button" class="text-red-600 hover:text-red-800 px-2 py-1" onclick="this.parentElement.remove()">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <button type="button" id="addBoxContent" class="mt-2 text-blue-600 hover:text-blue-800 text-sm font-medium">
+                            <i class="fas fa-plus mr-1"></i> Agregar item
+                        </button>
+                    </div>
+
+                    <div class="flex justify-between mt-8">
+                        <button id="backStep2" class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+                            <i class="fas fa-arrow-left mr-2"></i> Anterior
+                        </button>
+                        <button id="nextStep2" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+                            Siguiente: Target & Precio <i class="fas fa-arrow-right ml-2"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Step 3: Target & Precio -->
+                <div id="content-step-3" class="step-content bg-white rounded-lg shadow-lg p-8 border border-gray-200 hidden">
+                    <div class="mb-6">
+                        <h2 class="text-2xl font-bold text-gray-900 mb-2">🎯 Mercado Target y Estrategia</h2>
+                        <p class="text-gray-700 font-medium">Define tu audiencia objetivo y estrategia de precios</p>
+                    </div>
+
+                    <div class="space-y-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Cliente Objetivo *</label>
+                            <textarea id="targetAudience" rows="3" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Describe quién es tu cliente ideal: edad, intereses, necesidades..."></textarea>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Precio Objetivo *</label>
+                                <div class="relative">
+                                    <span class="absolute left-3 top-3 text-gray-500">$</span>
+                                    <input type="number" id="targetPrice" class="w-full pl-8 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="299">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Competencia Principal</label>
+                                <input type="text" id="mainCompetitor" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Ej: Apple Watch, Fitbit">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Casos de Uso Principales</label>
+                            <div id="useCasesContainer" class="space-y-2">
+                                <input type="text" class="use-case-input w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Ej: Durante entrenamientos y ejercicio físico">
+                            </div>
+                            <button type="button" id="addUseCase" class="mt-2 text-blue-600 hover:text-blue-800 text-sm font-medium">
+                                <i class="fas fa-plus mr-1"></i> Agregar caso de uso
+                            </button>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Palabras Clave Objetivo</label>
+                            <input type="text" id="keywords" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Ej: smartwatch, reloj deportivo, monitor fitness">
+                            <p class="text-xs text-gray-500 mt-1">Separa las palabras clave con comas</p>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-between mt-8">
+                        <button id="backStep3" class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+                            <i class="fas fa-arrow-left mr-2"></i> Anterior
+                        </button>
+                        <button id="nextStep3" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+                            Siguiente: Revisión <i class="fas fa-arrow-right ml-2"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Step 4: Revisión -->
+                <div id="content-step-4" class="step-content bg-white rounded-lg shadow-md p-8 hidden">
+                    <div class="mb-6">
+                        <h2 class="text-2xl font-bold text-gray-800 mb-2">📋 Revisión Final</h2>
+                        <p class="text-gray-600">Verifica toda la información antes de generar el listing</p>
+                    </div>
+
+                    <div id="reviewContent" class="space-y-6">
+                        <!-- Content will be dynamically generated -->
+                    </div>
+
+                    <div class="flex justify-between mt-8">
+                        <button id="backStep4" class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+                            <i class="fas fa-arrow-left mr-2"></i> Anterior
+                        </button>
+                        <button id="generateListing" class="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-lg font-medium transition-colors">
+                            <i class="fas fa-magic mr-2"></i> Generar Listing con IA
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Step 5: Listing Generado -->
+                <div id="content-step-5" class="step-content bg-white rounded-lg shadow-md p-8 hidden">
+                    <div class="mb-6">
+                        <h2 class="text-2xl font-bold text-gray-800 mb-2">🎉 ¡Listing Generado!</h2>
+                        <p class="text-gray-600">Tu listing optimizado está listo para Amazon</p>
+                    </div>
+
+                    <!-- Loading state -->
+                    <div id="loadingState" class="text-center py-12">
+                        <div class="loader mx-auto mb-4"></div>
+                        <h3 class="text-lg font-medium text-gray-700 mb-2">Generando tu listing...</h3>
+                        <p class="text-gray-500">Nuestros agentes de IA están trabajando en tu listing optimizado</p>
+                        <div class="mt-6 bg-blue-50 rounded-lg p-4">
+                            <div id="progressSteps" class="space-y-2 text-sm text-left">
+                                <div class="flex items-center text-blue-600">
+                                    <div class="loader mr-3" style="width: 16px; height: 16px; border-width: 2px;"></div>
+                                    <span>Analizando producto y categorización...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Results state -->
+                    <div id="resultsState" class="hidden">
+                        <div id="listingResults" class="space-y-6">
+                            <!-- Results will be dynamically generated -->
+                        </div>
+
+                        <div class="flex justify-between mt-8">
+                            <button id="backToStart" class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+                                <i class="fas fa-plus mr-2"></i> Crear Nuevo Listing
+                            </button>
+                            <div class="space-x-4">
+                                <button id="editListing" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+                                    <i class="fas fa-edit mr-2"></i> Editar
+                                </button>
+                                <button id="saveListing" class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+                                    <i class="fas fa-save mr-2"></i> Guardar Listing
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toast" class="fixed bottom-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg transform translate-y-full transition-transform duration-300 hidden">                    <a href="listings.html" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors">
+                        <i class="fas fa-list mr-2"></i>Ver Listings
+                    </a>
+            <i class="fas fa-check-circle mr-2"></i>
+            <span id="toastMessage">Mensaje</span>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script src="debug.js"></script>
+</body>
+</html>

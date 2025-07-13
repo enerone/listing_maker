@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Estado Aplicado - Botón Recomendación</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* Estilos para recomendaciones aplicadas */
+        .recommendation-applied {
+            transition: all 0.3s ease;
+            animation: appliedPulse 0.5s ease-in-out;
+        }
+        
+        .recommendation-applied-item {
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        
+        .recommendation-applied-item::after {
+            content: '✓ Aplicada';
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: #10b981;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: bold;
+        }
+        
+        /* Animación para botón aplicado */
+        @keyframes appliedPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold text-gray-800 mb-8">Test: Estado Aplicado de Recomendaciones</h1>
+        
+        <!-- Recomendaciones de ejemplo -->
+        <div class="bg-white p-6 rounded-lg shadow-md mb-8">
+            <h2 class="text-xl font-semibold mb-4">Recomendaciones Ejemplo</h2>
+            
+            <div class="space-y-4">
+                <!-- Recomendación 1 - Sin aplicar -->
+                <div class="bg-gray-50 rounded-lg p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                        <i class="fas fa-lightbulb mr-2 text-yellow-600"></i>Recomendaciones del Producto
+                    </h3>
+                    <ul class="space-y-2">
+                        <li class="flex items-start justify-between p-3 bg-yellow-50 rounded-lg border border-yellow-200 mb-2">
+                            <div class="flex items-start flex-1">
+                                <i class="fas fa-lightbulb text-yellow-500 mr-2 mt-1"></i>
+                                <span class="text-sm text-gray-700">Mejorar el título del producto para incluir palabras clave más específicas</span>
+                            </div>
+                            <button onclick="testApplyRecommendation(this, 'Mejorar el título del producto')" 
+                                    class="ml-3 px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs rounded-lg transition-colors flex items-center"
+                                    title="Aplicar esta recomendación">
+                                <i class="fas fa-magic-wand-sparkles mr-1"></i>
+                                Aplicar
+                            </button>
+                        </li>
+                        
+                        <li class="flex items-start justify-between p-3 bg-yellow-50 rounded-lg border border-yellow-200 mb-2">
+                            <div class="flex items-start flex-1">
+                                <i class="fas fa-lightbulb text-yellow-500 mr-2 mt-1"></i>
+                                <span class="text-sm text-gray-700">Ajustar el precio para ser más competitivo en el mercado</span>
+                            </div>
+                            <button onclick="testApplyRecommendation(this, 'Ajustar el precio')" 
+                                    class="ml-3 px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs rounded-lg transition-colors flex items-center"
+                                    title="Aplicar esta recomendación">
+                                <i class="fas fa-magic-wand-sparkles mr-1"></i>
+                                Aplicar
+                            </button>
+                        </li>
+                        
+                        <li class="flex items-start justify-between p-3 bg-yellow-50 rounded-lg border border-yellow-200 mb-2">
+                            <div class="flex items-start flex-1">
+                                <i class="fas fa-lightbulb text-yellow-500 mr-2 mt-1"></i>
+                                <span class="text-sm text-gray-700">Expandir la descripción con más detalles técnicos</span>
+                            </div>
+                            <button onclick="testApplyRecommendation(this, 'Expandir la descripción')" 
+                                    class="ml-3 px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs rounded-lg transition-colors flex items-center"
+                                    title="Aplicar esta recomendación">
+                                <i class="fas fa-magic-wand-sparkles mr-1"></i>
+                                Aplicar
+                            </button>
+                        </li>
+                        
+                        <!-- Recomendación ya aplicada (ejemplo) -->
+                        <li class="flex items-start justify-between p-3 bg-yellow-50 rounded-lg border border-yellow-200 mb-2 recommendation-applied-item" 
+                            style="background-color: #f0f9ff; border-color: #10b981; border-width: 2px;">
+                            <div class="flex items-start flex-1">
+                                <i class="fas fa-lightbulb text-yellow-500 mr-2 mt-1"></i>
+                                <span class="text-sm text-gray-700">Optimizar las keywords para mejor SEO</span>
+                            </div>
+                            <button class="ml-3 px-3 py-1 bg-green-500 hover:bg-green-600 text-white text-xs rounded-lg cursor-default recommendation-applied"
+                                    title="Aplicada el 12/7/2025, 14:30:15">
+                                <i class="fas fa-check-circle mr-1"></i>
+                                Aplicada
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Controles de prueba -->
+        <div class="bg-white p-6 rounded-lg shadow-md mb-8">
+            <h2 class="text-xl font-semibold mb-4">Controles de Prueba</h2>
+            
+            <div class="space-y-4">
+                <button onclick="resetAllButtons()" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors">
+                    <i class="fas fa-undo mr-2"></i>Resetear Todos los Botones
+                </button>
+                
+                <button onclick="applyAllRecommendations()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors">
+                    <i class="fas fa-magic-wand-sparkles mr-2"></i>Aplicar Todas las Recomendaciones
+                </button>
+            </div>
+        </div>
+        
+        <!-- Log de acciones -->
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-xl font-semibold mb-4">Log de Acciones</h2>
+            <div id="actionLog" class="space-y-2 max-h-64 overflow-y-auto">
+                <p class="text-gray-500 text-sm">Las acciones aparecerán aquí...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast para notificaciones -->
+    <div id="toast" class="fixed bottom-4 right-4 px-6 py-3 rounded-lg shadow-lg transform transition-transform duration-300 translate-y-full z-50">
+        <span id="toastMessage"></span>
+    </div>
+
+    <script>
+        function testApplyRecommendation(button, recommendationText) {
+            // Check if already applied
+            if (button.classList.contains('recommendation-applied')) {
+                showToast('Esta recomendación ya fue aplicada', 'info');
+                logAction(`Intento de re-aplicar: ${recommendationText}`);
+                return;
+            }
+            
+            // Show loading state
+            const originalContent = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Aplicando...';
+            button.disabled = true;
+            
+            logAction(`Aplicando recomendación: ${recommendationText}`);
+            
+            // Simulate API call
+            setTimeout(() => {
+                // Update button to applied state
+                button.innerHTML = '<i class="fas fa-check-circle mr-1"></i>Aplicada';
+                button.className = 'ml-3 px-3 py-1 bg-green-500 hover:bg-green-600 text-white text-xs rounded-lg cursor-default recommendation-applied';
+                button.disabled = false;
+                
+                // Add tooltip
+                const now = new Date().toLocaleString('es-ES');
+                button.title = `Aplicada el ${now}`;
+                
+                // Add visual feedback to container
+                const listItem = button.closest('li');
+                if (listItem) {
+                    listItem.classList.add('recommendation-applied-item');
+                    listItem.style.backgroundColor = '#f0f9ff';
+                    listItem.style.borderColor = '#10b981';
+                    listItem.style.borderWidth = '2px';
+                }
+                
+                showToast('✅ Recomendación aplicada exitosamente', 'success');
+                logAction(`Recomendación aplicada: ${recommendationText}`);
+                
+            }, 1500); // Simular tiempo de respuesta del servidor
+        }
+        
+        function resetAllButtons() {
+            const buttons = document.querySelectorAll('.recommendation-applied');
+            buttons.forEach(button => {
+                button.innerHTML = '<i class="fas fa-magic-wand-sparkles mr-1"></i>Aplicar';
+                button.className = 'ml-3 px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs rounded-lg transition-colors flex items-center';
+                button.disabled = false;
+                button.title = 'Aplicar esta recomendación';
+                
+                // Reset list item styling
+                const listItem = button.closest('li');
+                if (listItem) {
+                    listItem.classList.remove('recommendation-applied-item');
+                    listItem.style.backgroundColor = '';
+                    listItem.style.borderColor = '';
+                    listItem.style.borderWidth = '';
+                }
+            });
+            
+            showToast('Todos los botones han sido reseteados', 'info');
+            logAction('Todos los botones reseteados');
+        }
+        
+        function applyAllRecommendations() {
+            const buttons = document.querySelectorAll('button:not(.recommendation-applied)');
+            let delay = 0;
+            
+            buttons.forEach(button => {
+                if (button.innerHTML.includes('Aplicar') && !button.classList.contains('recommendation-applied')) {
+                    setTimeout(() => {
+                        button.click();
+                    }, delay);
+                    delay += 500; // Stagger the applications
+                }
+            });
+            
+            logAction('Iniciando aplicación de todas las recomendaciones');
+        }
+        
+        function logAction(action) {
+            const logDiv = document.getElementById('actionLog');
+            const timestamp = new Date().toLocaleTimeString('es-ES');
+            const logEntry = document.createElement('div');
+            logEntry.className = 'text-sm text-gray-700 border-b border-gray-200 pb-2';
+            logEntry.innerHTML = `<span class="text-gray-500">[${timestamp}]</span> ${action}`;
+            
+            // Remove placeholder if exists
+            if (logDiv.children.length === 1 && logDiv.children[0].textContent.includes('aparecerán aquí')) {
+                logDiv.innerHTML = '';
+            }
+            
+            logDiv.appendChild(logEntry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+        
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toastMessage');
+            
+            toastMessage.textContent = message;
+            
+            let bgColor;
+            switch(type) {
+                case 'success': bgColor = 'bg-green-500 text-white'; break;
+                case 'error': bgColor = 'bg-red-500 text-white'; break;
+                case 'warning': bgColor = 'bg-yellow-500 text-white'; break;
+                default: bgColor = 'bg-blue-500 text-white'; break;
+            }
+            
+            toast.className = `fixed bottom-4 right-4 px-6 py-3 rounded-lg shadow-lg transform transition-transform duration-300 z-50 ${bgColor}`;
+            toast.classList.remove('translate-y-full');
+            
+            setTimeout(() => {
+                toast.classList.add('translate-y-full');
+            }, 3000);
+        }
+        
+        // Log initial state
+        document.addEventListener('DOMContentLoaded', function() {
+            logAction('Página cargada - Sistema de recomendaciones listo');
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Listings Simples</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 p-8">
+    <div class="max-w-6xl mx-auto">
+        <h1 class="text-3xl font-bold mb-6">Listings Creados (Versión Simple)</h1>
+        
+        <div class="mb-4">
+            <button onclick="loadListings()" class="bg-blue-600 text-white px-4 py-2 rounded">
+                Cargar Listings
+            </button>
+        </div>
+        
+        <div id="status" class="mb-4 p-4 bg-white rounded shadow">
+            Status: Listo para cargar
+        </div>
+        
+        <div id="listingsContainer" class="bg-white rounded shadow p-6">
+            <!-- Los listings aparecerán aquí -->
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:8000';
+        
+        async function loadListings() {
+            const statusDiv = document.getElementById('status');
+            const container = document.getElementById('listingsContainer');
+            
+            try {
+                statusDiv.innerHTML = '🔄 Cargando listings...';
+                container.innerHTML = 'Cargando...';
+                
+                console.log('Fetching listings from:', `${API_BASE_URL}/api/listings/`);
+                
+                const response = await fetch(`${API_BASE_URL}/api/listings/`);
+                
+                console.log('Response:', response);
+                console.log('Response status:', response.status);
+                console.log('Response ok:', response.ok);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                console.log('Data received:', data);
+                
+                statusDiv.innerHTML = `✅ Cargado exitosamente - ${data.total} listings encontrados`;
+                
+                if (data.listings && data.listings.length > 0) {
+                    container.innerHTML = `
+                        <h2 class="text-xl font-bold mb-4">Listings (${data.listings.length})</h2>
+                        <div class="space-y-4">
+                            ${data.listings.map(listing => `
+                                <div class="border p-4 rounded">
+                                    <h3 class="font-semibold text-lg">${listing.product_name || 'Sin nombre'}</h3>
+                                    <p class="text-gray-600">${listing.title || 'Sin título'}</p>
+                                    <div class="mt-2 text-sm text-gray-500">
+                                        <span class="inline-block bg-blue-100 px-2 py-1 rounded mr-2">
+                                            ${(listing.category || 'Sin categoría').replace('ProductCategory.', '')}
+                                        </span>
+                                        <span class="inline-block bg-green-100 px-2 py-1 rounded mr-2">
+                                            $${listing.target_price || 'N/A'}
+                                        </span>
+                                        <span class="inline-block bg-purple-100 px-2 py-1 rounded">
+                                            ID: ${listing.id}
+                                        </span>
+                                    </div>
+                                    <div class="mt-2 text-xs text-gray-400">
+                                        Creado: ${new Date(listing.created_at).toLocaleDateString()}
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                } else {
+                    container.innerHTML = '<p class="text-gray-500">No hay listings para mostrar</p>';
+                }
+                
+            } catch (error) {
+                console.error('Error:', error);
+                statusDiv.innerHTML = `❌ Error: ${error.message}`;
+                container.innerHTML = `<p class="text-red-500">Error cargando listings: ${error.message}</p>`;
+            }
+        }
+        
+        // Auto-load on page load
+        document.addEventListener('DOMContentLoaded', loadListings);
+    </script>
+</body>
+</html>

@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test de Conectividad API</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold mb-6">Test de Conectividad API</h1>
+        
+        <div class="space-y-4">
+            <button onclick="testHealthCheck()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                Test Health Check
+            </button>
+            
+            <button onclick="testListings()" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+                Test Listings API
+            </button>
+            
+            <button onclick="testSingleListing()" class="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600">
+                Test Single Listing
+            </button>
+        </div>
+        
+        <div id="results" class="mt-8 p-4 bg-white rounded-lg shadow">
+            <h3 class="text-lg font-semibold mb-4">Resultados:</h3>
+            <pre id="output" class="text-sm bg-gray-100 p-3 rounded"></pre>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000';
+        
+        function log(message) {
+            const output = document.getElementById('output');
+            output.textContent += new Date().toISOString() + ': ' + message + '\n';
+        }
+        
+        async function testHealthCheck() {
+            log('Testing health check...');
+            try {
+                const response = await fetch(`${API_BASE}/api/listings/health`);
+                log(`Health check status: ${response.status}`);
+                const data = await response.json();
+                log(`Health check response: ${JSON.stringify(data, null, 2)}`);
+            } catch (error) {
+                log(`Health check error: ${error.message}`);
+            }
+        }
+        
+        async function testListings() {
+            log('Testing listings API...');
+            try {
+                const response = await fetch(`${API_BASE}/api/listings/`);
+                log(`Listings API status: ${response.status}`);
+                const data = await response.json();
+                log(`Listings count: ${data.total}`);
+                log(`First listing: ${JSON.stringify(data.listings[0], null, 2)}`);
+            } catch (error) {
+                log(`Listings API error: ${error.message}`);
+            }
+        }
+        
+        async function testSingleListing() {
+            log('Testing single listing API...');
+            try {
+                const response = await fetch(`${API_BASE}/api/listings/1`);
+                log(`Single listing status: ${response.status}`);
+                const data = await response.json();
+                log(`Single listing response: ${JSON.stringify(data, null, 2)}`);
+            } catch (error) {
+                log(`Single listing error: ${error.message}`);
+            }
+        }
+        
+        // Auto test on load
+        window.addEventListener('load', function() {
+            log('Page loaded, starting auto tests...');
+            testHealthCheck();
+            setTimeout(testListings, 1000);
+        });
+    </script>
+</body>
+</html>

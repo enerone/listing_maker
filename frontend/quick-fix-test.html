@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug - Quick Fix Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen p-8">
+    <h1 class="text-3xl font-bold mb-8">🚀 Quick Fix Test</h1>
+    
+    <!-- Test Stats Elements -->
+    <div class="grid grid-cols-3 gap-4 mb-8 bg-white p-6 rounded shadow">
+        <div>
+            <label>Total:</label>
+            <span id="totalListings" class="font-bold text-blue-600">-</span>
+        </div>
+        <div>
+            <label>Published:</label>
+            <span id="publishedListings" class="font-bold text-green-600">-</span>
+        </div>
+        <div>
+            <label>Drafts:</label>
+            <span id="draftListings" class="font-bold text-yellow-600">-</span>
+        </div>
+    </div>
+    
+    <!-- Control Panel -->
+    <div class="bg-white p-6 rounded shadow mb-8">
+        <button onclick="testUpdate()" class="bg-blue-500 text-white px-4 py-2 rounded mr-4">Test Update Stats</button>
+        <button onclick="testLoad()" class="bg-green-500 text-white px-4 py-2 rounded mr-4">Test Load API</button>
+        <button onclick="testToast()" class="bg-purple-500 text-white px-4 py-2 rounded">Test Toast</button>
+    </div>
+    
+    <!-- Console Output -->
+    <div class="bg-gray-900 text-green-400 p-4 rounded font-mono text-sm">
+        <div id="console">Ready...</div>
+    </div>
+    
+    <!-- Toast -->
+    <div id="toast" class="fixed bottom-4 right-4 px-6 py-3 rounded-lg shadow-lg transform transition-transform duration-300 translate-y-full hidden">
+        <span id="toastMessage"></span>
+    </div>
+
+    <script>
+        // Debug logger
+        function log(msg) {
+            const console = document.getElementById('console');
+            console.innerHTML += '<br>' + new Date().toLocaleTimeString() + ': ' + msg;
+            console.scrollTop = console.scrollHeight;
+            console.log(msg);
+        }
+        
+        // Mock data
+        let allListings = [
+            { status: 'published' },
+            { status: 'published' },
+            { status: 'draft' },
+            { status: 'draft' },
+            { status: 'draft' }
+        ];
+        
+        // Toast function
+        function showToast(message, type = 'info') {
+            try {
+                const toast = document.getElementById('toast');
+                const toastMessage = document.getElementById('toastMessage');
+                
+                if (!toast || !toastMessage) {
+                    log('ERROR: Toast elements not found');
+                    return;
+                }
+                
+                toastMessage.textContent = message;
+                
+                let bgColor;
+                switch(type) {
+                    case 'success': bgColor = 'bg-green-500 text-white'; break;
+                    case 'error': bgColor = 'bg-red-500 text-white'; break;
+                    default: bgColor = 'bg-blue-500 text-white'; break;
+                }
+                
+                toast.className = `fixed bottom-4 right-4 px-6 py-3 rounded-lg shadow-lg transform transition-transform duration-300 ${bgColor}`;
+                toast.classList.remove('hidden', 'translate-y-full');
+                
+                setTimeout(() => {
+                    toast.classList.add('translate-y-full');
+                    setTimeout(() => toast.classList.add('hidden'), 300);
+                }, 3000);
+                
+                log('Toast shown: ' + message);
+            } catch (error) {
+                log('ERROR showing toast: ' + error.message);
+            }
+        }
+        
+        // Update stats function
+        function updateStats() {
+            try {
+                log('Starting updateStats...');
+                
+                const totalListings = allListings.length;
+                const publishedListings = allListings.filter(listing => listing.status === 'published').length;
+                const draftListings = allListings.filter(listing => listing.status === 'draft').length;
+                
+                log('Calculated stats: ' + JSON.stringify({ totalListings, publishedListings, draftListings }));
+                
+                const totalEl = document.getElementById('totalListings');
+                const publishedEl = document.getElementById('publishedListings');
+                const draftEl = document.getElementById('draftListings');
+                
+                log('Got elements: ' + JSON.stringify({
+                    totalEl: !!totalEl,
+                    publishedEl: !!publishedEl,
+                    draftEl: !!draftEl
+                }));
+                
+                if (totalEl) {
+                    totalEl.textContent = totalListings;
+                    log('Set totalEl.textContent = ' + totalListings);
+                } else {
+                    log('ERROR: totalEl is null');
+                }
+                
+                if (publishedEl) {
+                    publishedEl.textContent = publishedListings;
+                    log('Set publishedEl.textContent = ' + publishedListings);
+                } else {
+                    log('ERROR: publishedEl is null');
+                }
+                
+                if (draftEl) {
+                    draftEl.textContent = draftListings;
+                    log('Set draftEl.textContent = ' + draftListings);
+                } else {
+                    log('ERROR: draftEl is null');
+                }
+                
+                log('updateStats completed successfully');
+            } catch (error) {
+                log('ERROR in updateStats: ' + error.message);
+            }
+        }
+        
+        // Load from API
+        async function loadListings() {
+            try {
+                log('Starting API call...');
+                
+                const response = await fetch('http://localhost:8000/listings/');
+                if (!response.ok) {
+                    throw new Error('HTTP ' + response.status);
+                }
+                
+                const data = await response.json();
+                log('API returned ' + data.total + ' listings');
+                
+                allListings = (data.listings || []).map(listing => ({
+                    ...listing,
+                    category: listing.category ? listing.category.replace('ProductCategory.', '') : 'Sin categoría',
+                    confidence_score: Number(listing.confidence_score || 0),
+                    price: listing.target_price || listing.price || 0
+                }));
+                
+                log('Processed ' + allListings.length + ' listings');
+                updateStats();
+                showToast('Listings loaded successfully!', 'success');
+                
+            } catch (error) {
+                log('ERROR loading listings: ' + error.message);
+                showToast('Error loading listings: ' + error.message, 'error');
+            }
+        }
+        
+        // Test functions
+        function testUpdate() {
+            log('=== TESTING UPDATE STATS ===');
+            updateStats();
+        }
+        
+        function testLoad() {
+            log('=== TESTING API LOAD ===');
+            loadListings();
+        }
+        
+        function testToast() {
+            log('=== TESTING TOAST ===');
+            showToast('This is a test toast!', 'success');
+        }
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            log('DOM ready, page initialized');
+            log('DOM elements check:');
+            log('- totalListings: ' + !!document.getElementById('totalListings'));
+            log('- publishedListings: ' + !!document.getElementById('publishedListings'));
+            log('- draftListings: ' + !!document.getElementById('draftListings'));
+            log('- toast: ' + !!document.getElementById('toast'));
+            log('- toastMessage: ' + !!document.getElementById('toastMessage'));
+            
+            // Run initial tests
+            setTimeout(() => {
+                log('=== AUTO TESTING ===');
+                testUpdate();
+                setTimeout(() => testLoad(), 1000);
+            }, 500);
+        });
+    </script>
+</body>
+</html>

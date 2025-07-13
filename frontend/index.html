@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Amazon Listing Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-6">
+                <div class="flex items-center">
+                    <i class="fas fa-chart-line text-3xl text-blue-600 mr-3"></i>
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900">Dashboard</h1>
+                        <p class="text-sm text-gray-600">Amazon Listing Generator</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <a href="create-listing.html" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors">
+                        <i class="fas fa-plus mr-2"></i>Crear Listing
+                    </a>
+                    <a href="listings.html" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors">
+                        <i class="fas fa-list mr-2"></i>Ver Listings
+                    </a>
+                    <div class="flex items-center">
+                        <div class="w-3 h-3 rounded-full bg-green-400 mr-2" id="statusIndicator"></div>
+                        <span class="text-sm text-gray-600" id="systemStatus">Cargando...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Welcome Banner -->
+        <div class="bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg p-6 mb-8 text-white">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="text-2xl font-bold mb-2">¡Bienvenido al Sistema de Listings!</h2>
+                    <p class="text-blue-100 mb-4">Crea listings optimizados para Amazon usando inteligencia artificial</p>
+                    <div class="flex space-x-4">
+                        <a href="create-listing.html" class="bg-white text-blue-600 px-4 py-2 rounded-lg font-medium hover:bg-gray-100 transition-colors">
+                            <i class="fas fa-rocket mr-2"></i>Crear Mi Primer Listing
+                        </a>
+                        <button onclick="loadQuickTour()" class="border border-white text-white px-4 py-2 rounded-lg font-medium hover:bg-white hover:text-blue-600 transition-colors">
+                            <i class="fas fa-play-circle mr-2"></i>Tour Rápido
+                        </button>
+                    </div>
+                </div>
+                <div class="hidden md:block">
+                    <i class="fas fa-magic text-6xl opacity-20"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Overview -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white p-6 rounded-lg shadow hover:shadow-md transition-shadow">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-blue-100 text-blue-600">
+                        <i class="fas fa-list-alt text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-500">Total Listings</p>
+                        <p class="text-2xl font-semibold text-gray-900" id="totalListings">0</p>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <span class="text-xs text-gray-500">Todos los listings creados</span>
+                </div>
+            </div>
+            
+            <div class="bg-white p-6 rounded-lg shadow hover:shadow-md transition-shadow">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-green-100 text-green-600">
+                        <i class="fas fa-check-circle text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-500">Publicados</p>
+                        <p class="text-2xl font-semibold text-gray-900" id="publishedListings">0</p>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <span class="text-xs text-gray-500">Listos para Amazon</span>
+                </div>
+            </div>
+            
+            <div class="bg-white p-6 rounded-lg shadow hover:shadow-md transition-shadow">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-yellow-100 text-yellow-600">
+                        <i class="fas fa-clock text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-500">Borradores</p>
+                        <p class="text-2xl font-semibold text-gray-900" id="draftListings">0</p>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <span class="text-xs text-gray-500">En proceso</span>
+                </div>
+            </div>
+            
+            <div class="bg-white p-6 rounded-lg shadow hover:shadow-md transition-shadow">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-purple-100 text-purple-600">
+                        <i class="fas fa-star text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-500">Confianza Promedio</p>
+                        <p class="text-2xl font-semibold text-gray-900" id="avgConfidence">0%</p>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <span class="text-xs text-gray-500">Calidad IA</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Dashboard Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Recent Listings -->
+            <div class="lg:col-span-2">
+                <div class="bg-white rounded-lg shadow">
+                    <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+                        <h3 class="text-lg font-medium text-gray-900">
+                            <i class="fas fa-clock mr-2 text-blue-600"></i>Listings Recientes
+                        </h3>
+                        <a href="listings.html" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                            Ver todos <i class="fas fa-arrow-right ml-1"></i>
+                        </a>
+                    </div>
+                    
+                    <div id="recentListings" class="p-6">
+                        <div class="text-center py-8">
+                            <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                            <p class="mt-2 text-gray-600">Cargando listings recientes...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions & System Status -->
+            <div class="space-y-6">
+                <!-- Quick Actions -->
+                <div class="bg-white rounded-lg shadow">
+                    <div class="px-6 py-4 border-b border-gray-200">
+                        <h3 class="text-lg font-medium text-gray-900">
+                            <i class="fas fa-bolt mr-2 text-yellow-600"></i>Acciones Rápidas
+                        </h3>
+                    </div>
+                    <div class="p-6 space-y-4">
+                        <a href="create-listing.html" class="block w-full bg-blue-600 hover:bg-blue-700 text-white text-center py-3 px-4 rounded-lg transition-colors">
+                            <i class="fas fa-plus mr-2"></i>Nuevo Listing
+                        </a>
+                        <button onclick="openBulkImport()" class="block w-full bg-green-600 hover:bg-green-700 text-white text-center py-3 px-4 rounded-lg transition-colors">
+                            <i class="fas fa-upload mr-2"></i>Importar CSV
+                        </button>
+                        <button onclick="exportListings()" class="block w-full bg-purple-600 hover:bg-purple-700 text-white text-center py-3 px-4 rounded-lg transition-colors">
+                            <i class="fas fa-download mr-2"></i>Exportar Todo
+                        </button>
+                        <a href="listings.html?filter=drafts" class="block w-full bg-gray-600 hover:bg-gray-700 text-white text-center py-3 px-4 rounded-lg transition-colors">
+                            <i class="fas fa-edit mr-2"></i>Revisar Borradores
+                        </a>
+                    </div>
+                </div>
+
+                <!-- System Status -->
+                <div class="bg-white rounded-lg shadow">
+                    <div class="px-6 py-4 border-b border-gray-200">
+                        <h3 class="text-lg font-medium text-gray-900">
+                            <i class="fas fa-server mr-2 text-green-600"></i>Estado del Sistema
+                        </h3>
+                    </div>
+                    <div class="p-6 space-y-4">
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-gray-600">Backend API</span>
+                            <span id="backendStatus" class="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full">Verificando...</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-gray-600">Agentes IA</span>
+                            <span id="aiStatus" class="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full">Verificando...</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-gray-600">Base de Datos</span>
+                            <span id="dbStatus" class="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full">Verificando...</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-gray-600">Último Sync</span>
+                            <span id="lastSync" class="text-xs text-gray-500">Hace unos momentos</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Categories Distribution -->
+                <div class="bg-white rounded-lg shadow">
+                    <div class="px-6 py-4 border-b border-gray-200">
+                        <h3 class="text-lg font-medium text-gray-900">
+                            <i class="fas fa-chart-pie mr-2 text-purple-600"></i>Categorías
+                        </h3>
+                    </div>
+                    <div class="p-6">
+                        <canvas id="categoriesChart" width="300" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Performance Insights -->
+        <div class="mt-8 bg-white rounded-lg shadow">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h3 class="text-lg font-medium text-gray-900">
+                    <i class="fas fa-chart-line mr-2 text-blue-600"></i>Rendimiento de Listings
+                </h3>
+            </div>
+            <div class="p-6">
+                <canvas id="performanceChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </main>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-4 right-4 px-6 py-3 rounded-lg shadow-lg transform transition-transform duration-300 translate-y-full hidden">
+        <span id="toastMessage"></span>
+    </div>
+
+    <!-- Quick Tour Modal -->
+    <div id="tourModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden">
+        <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
+            <div class="mt-3">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-medium text-gray-900">🚀 Tour Rápido del Sistema</h3>
+                    <button onclick="closeTour()" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+                <div class="space-y-4">
+                    <div class="border-l-4 border-blue-500 pl-4">
+                        <h4 class="font-semibold">1. Crear Listing</h4>
+                        <p class="text-sm text-gray-600">Usa IA para generar listings optimizados automáticamente</p>
+                    </div>
+                    <div class="border-l-4 border-green-500 pl-4">
+                        <h4 class="font-semibold">2. Revisar y Editar</h4>
+                        <p class="text-sm text-gray-600">Personaliza el contenido generado según tus necesidades</p>
+                    </div>
+                    <div class="border-l-4 border-purple-500 pl-4">
+                        <h4 class="font-semibold">3. Publicar en Amazon</h4>
+                        <p class="text-sm text-gray-600">Exporta el listing listo para subir a Amazon</p>
+                    </div>
+                </div>
+                <div class="mt-6 flex justify-end space-x-3">
+                    <button onclick="closeTour()" class="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50">
+                        Cerrar
+                    </button>
+                    <a href="create-listing.html" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                        Empezar Ahora
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="dashboard.js"></script>
+</body>
+</html>

@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Listings - Debug Simple</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-gray-50">
+    <div class="max-w-7xl mx-auto px-4 py-8">
+        <h1 class="text-2xl font-bold mb-4">🔍 Debug Listings</h1>
+        
+        <div class="bg-white rounded-lg shadow p-4">
+            <div id="debugInfo" class="mb-4 p-3 bg-blue-100 rounded">
+                Cargando...
+            </div>
+            
+            <div class="overflow-x-auto">
+                <table class="w-full border-collapse border border-gray-300">
+                    <thead>
+                        <tr class="bg-gray-100">
+                            <th class="border border-gray-300 px-4 py-2 text-left">Producto</th>
+                            <th class="border border-gray-300 px-4 py-2 text-left">Categoría</th>
+                            <th class="border border-gray-300 px-4 py-2 text-left">Precio</th>
+                            <th class="border border-gray-300 px-4 py-2 text-left">Estado</th>
+                            <th class="border border-gray-300 px-4 py-2 text-left">Fecha</th>
+                            <th class="border border-gray-300 px-4 py-2 text-left bg-yellow-100">🎯 ACCIONES</th>
+                        </tr>
+                    </thead>
+                    <tbody id="listingsTable">
+                        <tr>
+                            <td colspan="6" class="border border-gray-300 px-4 py-8 text-center">
+                                <i class="fas fa-spinner fa-spin text-2xl"></i>
+                                <p>Cargando listings...</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:8000';
+        
+        function updateDebugInfo(message) {
+            document.getElementById('debugInfo').innerHTML = message;
+        }
+        
+        function generateRow(listing, index) {
+            const id = listing.id || index;
+            const name = listing.product_name || 'Sin nombre';
+            const category = listing.category ? listing.category.replace('ProductCategory.', '') : 'Sin categoría';
+            const price = listing.target_price || listing.price || 'N/A';
+            const status = listing.status || 'draft';
+            const date = listing.created_at ? new Date(listing.created_at).toLocaleDateString() : 'N/A';
+            
+            return `
+                <tr class="hover:bg-gray-50">
+                    <td class="border border-gray-300 px-4 py-2">
+                        <div class="flex items-center">
+                            <i class="fas fa-box text-blue-500 mr-2"></i>
+                            <span class="font-medium">${name}</span>
+                        </div>
+                    </td>
+                    <td class="border border-gray-300 px-4 py-2">
+                        <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm">${category}</span>
+                    </td>
+                    <td class="border border-gray-300 px-4 py-2 font-medium">${price}</td>
+                    <td class="border border-gray-300 px-4 py-2">
+                        <span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-sm">${status}</span>
+                    </td>
+                    <td class="border border-gray-300 px-4 py-2 text-gray-600">${date}</td>
+                    <td class="border border-gray-300 px-4 py-2 bg-yellow-50">
+                        <div class="flex space-x-2 justify-center">
+                            <button onclick="alert('Ver: ${id}')" 
+                                    class="bg-blue-500 hover:bg-blue-700 text-white px-2 py-1 rounded text-sm">
+                                <i class="fas fa-eye"></i> Ver
+                            </button>
+                            <button onclick="alert('Editar: ${id}')" 
+                                    class="bg-green-500 hover:bg-green-700 text-white px-2 py-1 rounded text-sm">
+                                <i class="fas fa-edit"></i> Editar
+                            </button>
+                            <button onclick="alert('Duplicar: ${id}')" 
+                                    class="bg-purple-500 hover:bg-purple-700 text-white px-2 py-1 rounded text-sm">
+                                <i class="fas fa-copy"></i> Duplicar
+                            </button>
+                            <button onclick="alert('Eliminar: ${id}')" 
+                                    class="bg-red-500 hover:bg-red-700 text-white px-2 py-1 rounded text-sm">
+                                <i class="fas fa-trash"></i> Eliminar
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }
+        
+        async function loadListings() {
+            try {
+                updateDebugInfo('🔄 Conectando al servidor...');
+                
+                const response = await fetch(`${API_BASE_URL}/listings/`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                console.log('Raw API response:', data);
+                
+                const listings = data.listings || data || [];
+                
+                updateDebugInfo(`✅ Datos cargados: ${listings.length} listings encontrados`);
+                
+                const tbody = document.getElementById('listingsTable');
+                
+                if (listings.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="6" class="border border-gray-300 px-4 py-8 text-center text-gray-500">
+                                <i class="fas fa-inbox text-2xl mb-2"></i>
+                                <p>No hay listings disponibles</p>
+                            </td>
+                        </tr>
+                    `;
+                } else {
+                    tbody.innerHTML = listings.map((listing, index) => generateRow(listing, index)).join('');
+                }
+                
+            } catch (error) {
+                console.error('Error loading listings:', error);
+                updateDebugInfo(`❌ Error: ${error.message}`);
+                
+                document.getElementById('listingsTable').innerHTML = `
+                    <tr>
+                        <td colspan="6" class="border border-gray-300 px-4 py-8 text-center text-red-500">
+                            <i class="fas fa-exclamation-triangle text-2xl mb-2"></i>
+                            <p>Error cargando listings: ${error.message}</p>
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+        
+        // Cargar cuando esté listo
+        document.addEventListener('DOMContentLoaded', loadListings);
+    </script>
+</body>
+</html>

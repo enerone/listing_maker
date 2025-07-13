@@ -1,0 +1,147 @@
+{
+  "success": true,
+  "agent_name": "MarketingReviewAgent",
+  "data": {
+    "analisis_marketing": {
+      "persuasion_conversion": {
+        "puntuacion": 7,
+        "fortalezas": [
+          "Ventajas técnicas claras",
+          "Batería de larga duración"
+        ],
+        "debilidades": [
+          "Título largo y poco atractivo",
+          "Falta de emocionalidad en el título"
+        ],
+        "oportunidades": [
+          "Mejorar la conexión emocional con el consumidor"
+        ]
+      },
+      "psicologia_consumidor": {
+        "puntuacion": 6,
+        "triggers_usados": [
+          "Necesidad de precisión GPS",
+          "Batería larga duración",
+          "Resistencia a condiciones extremas"
+        ],
+        "triggers_faltantes": [
+          "Compromiso con el estilo de vida activo",
+          "Conexión emocional con logros personales"
+        ],
+        "conexion_emocional": 3
+      },
+      "seo_visibilidad": {
+        "puntuacion": 8,
+        "keywords_efectivas": [
+          "smartwatch deportivo",
+          "GPS precision",
+          "batería larga duración",
+          "resistente agua",
+          "monitor cardíaco"
+        ],
+        "keywords_faltantes": [
+          "reloj inteligente para atletas",
+          "análisis sueño",
+          "modos deportivos múltiples"
+        ],
+        "densidad_optima": true
+      },
+      "estructura_ventas": {
+        "puntuacion": 6,
+        "sigue_framework": "",
+        "jerarquia_correcta": false,
+        "cta_presente": true
+      },
+      "diferenciacion": {
+        "puntuacion": 7,
+        "ventajas_claras": true,
+        "propuesta_valor": "Ofrece un equilibrio entre tecnología avanzada y resistencia",
+        "justifica_precio": true
+      },
+      "mobile_optimization": {
+        "puntuacion": 5,
+        "titulo_mobile_friendly": false,
+        "bullets_escaneables": true,
+        "info_clave_arriba": false
+      }
+    },
+    "mejoras_recomendadas": {
+      "titulo_optimizado": {
+        "nuevo_titulo": "Smartwatch Deportivo Pro X1 - Batería de 7 días con GPS y Monitor Cardíaco",
+        "cambios_realizados": [
+          "Eliminación de palabras redundantes"
+        ],
+        "razonamiento": "Título más conciso y atractivo"
+      },
+      "descripcion_mejorada": {
+        "nueva_descripcion": "El Smartwatch Deportivo Pro X1 combina tecnología avanzada con diseño robusto para acompañarte en cada aventura. Con su batería de 7 días, GPS militar de precisión, monitor cardíaco profesional y resistencia IP68 + MIL-STD-810G, este reloj inteligente es tu compañero perfecto para superar límites y alcanzar nuevas metas.",
+        "estructura_usada": "Introducción con beneficios principales, detalles técnicos, ventajas competitivas",
+        "elementos_persuasivos": [
+          "Batería de 7 días",
+          "GPS militar",
+          "Monitor cardíaco profesional"
+        ],
+        "storytelling_aplicado": true
+      },
+      "bullet_points_optimizados": [
+        {
+          "bullet": "⚡ Batería ultra duración: 7 días de uso continuo con GPS activo",
+          "tipo_beneficio": "Durabilidad y comodidad",
+          "trigger_psicologico": "Necesidad de precisión en actividades al aire libre"
+        },
+        {
+          "bullet": "🎯 GPS militar para navegación exacta en cualquier terreno",
+          "tipo_beneficio": "Seguridad y orientación",
+          "trigger_psicologico": "Confianza en el rendimiento técnico"
+        },
+        {
+          "bullet": "❤️ Monitor cardíaco profesional con alertas de salud en tiempo real",
+          "tipo_beneficio": "Cuidado personalizado",
+          "trigger_psicologico": "Conciencia sobre la salud y bienestar"
+        },
+        {
+          "bullet": "🛡️ Resistencia extrema: IP68 + MIL-STD-810G para condiciones adversas",
+          "tipo_beneficio": "Resistencia y durabilidad",
+          "trigger_psicologico": "Fidelidad al estilo de vida activo"
+        }
+      ],
+      "keywords_adicionales": {
+        "alta_conversion": [
+          "reloj inteligente atletas",
+          "análisis sueño",
+          "modos deportivos múltiples"
+        ],
+        "long_tail": [
+          "smartwatch resistente agua",
+          "GPS precisión militar",
+          "monitor cardíaco profesional"
+        ],
+        "semanticas": []
+      },
+      "estrategia_precio": {
+        "analisis_actual": "Precio de $299.99 es competitivo en el mercado",
+        "recomendacion": "Ajustar ligeramente el precio para mejorar la percepción de valor",
+        "posicionamiento_sugerido": "Posicionar como un smartwatch premium con características avanzadas"
+      }
+    },
+    "puntuacion_general": 6.5,
+    "prioridades_implementacion": [
+      "Optimización del título y descripción",
+      "Mejora de la estructura de ventas",
+      "Ajuste del precio para mejorar la percepción de valor"
+    ],
+    "impacto_esperado": {
+      "conversion_rate": "Incremento en tasa de conversión al 2%",
+      "visibilidad_seo": "Mejor posicionamiento orgánico en búsquedas relevantes",
+      "diferenciacion": "Mayor percepción de ventajas competitivas"
+    },
+    "recomendaciones_adicionales": [
+      "Incorporar imágenes dinámicas y videos para demostrar características técnicas",
+      "Crear contenido de blog sobre la importancia del seguimiento del sueño y análisis deportivos"
+    ],
+    "confidence_score": 0.75
+  },
+  "confidence": 0.75,
+  "processing_time": 25.678522,
+  "timestamp": "2025-07-12T20:22:25.178824"
+}

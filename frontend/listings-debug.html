@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Listings - Debug</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 p-8">
+    <div class="max-w-6xl mx-auto">
+        <h1 class="text-3xl font-bold mb-6">Listings Debug</h1>
+        
+        <div class="mb-4">
+            <button onclick="loadListings()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                Cargar Listings
+            </button>
+        </div>
+        
+        <div id="stats" class="mb-6 p-4 bg-white rounded-lg shadow">
+            <h3 class="text-lg font-semibold mb-2">Estadísticas:</h3>
+            <p>Total: <span id="totalCount">0</span></p>
+            <p>Estado: <span id="loadingStatus">No cargado</span></p>
+        </div>
+        
+        <div id="listingsContainer" class="bg-white rounded-lg shadow">
+            <div class="p-4">
+                <h3 class="text-lg font-semibold mb-4">Listings:</h3>
+                <div id="listingsTable">
+                    <p>No hay listings cargados</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000';
+        
+        function updateStatus(message) {
+            document.getElementById('loadingStatus').textContent = message;
+            console.log('Status:', message);
+        }
+        
+        async function loadListings() {
+            updateStatus('Cargando...');
+            
+            try {
+                console.log('Fetching from:', `${API_BASE}/api/listings/`);
+                
+                const response = await fetch(`${API_BASE}/api/listings/`);
+                console.log('Response status:', response.status);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                console.log('Data received:', data);
+                
+                document.getElementById('totalCount').textContent = data.total || 0;
+                updateStatus('Cargado exitosamente');
+                
+                renderListings(data.listings || []);
+                
+            } catch (error) {
+                console.error('Error loading listings:', error);
+                updateStatus(`Error: ${error.message}`);
+            }
+        }
+        
+        function renderListings(listings) {
+            const container = document.getElementById('listingsTable');
+            
+            if (!listings || listings.length === 0) {
+                container.innerHTML = '<p class="text-gray-500">No hay listings disponibles</p>';
+                return;
+            }
+            
+            let html = `
+                <table class="w-full border-collapse">
+                    <thead>
+                        <tr class="border-b">
+                            <th class="text-left p-2">ID</th>
+                            <th class="text-left p-2">Producto</th>
+                            <th class="text-left p-2">Categoría</th>
+                            <th class="text-left p-2">Precio</th>
+                            <th class="text-left p-2">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            listings.forEach(listing => {
+                html += `
+                    <tr class="border-b hover:bg-gray-50">
+                        <td class="p-2">${listing.id}</td>
+                        <td class="p-2">${listing.product_name}</td>
+                        <td class="p-2">${listing.category.replace('ProductCategory.', '')}</td>
+                        <td class="p-2">$${listing.target_price}</td>
+                        <td class="p-2">
+                            <button onclick="viewListing(${listing.id})" class="bg-blue-500 text-white px-2 py-1 rounded text-sm hover:bg-blue-600">
+                                Ver
+                            </button>
+                            <button onclick="duplicateListing(${listing.id})" class="bg-green-500 text-white px-2 py-1 rounded text-sm hover:bg-green-600 ml-1">
+                                Duplicar
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+        
+        function viewListing(id) {
+            console.log('Viewing listing:', id);
+            window.open(`http://localhost:8000/frontend/view-listing.html?id=${id}`, '_blank');
+        }
+        
+        async function duplicateListing(id) {
+            console.log('Duplicating listing:', id);
+            updateStatus('Duplicando...');
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/listings/${id}/duplicate`, {
+                    method: 'POST'
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const result = await response.json();
+                console.log('Duplicate result:', result);
+                updateStatus('Duplicado exitosamente');
+                
+                // Recargar listings
+                loadListings();
+                
+            } catch (error) {
+                console.error('Error duplicating:', error);
+                updateStatus(`Error duplicando: ${error.message}`);
+            }
+        }
+        
+        // Auto load on page load
+        window.addEventListener('load', function() {
+            console.log('Page loaded, auto-loading listings...');
+            loadListings();
+        });
+    </script>
+</body>
+</html>

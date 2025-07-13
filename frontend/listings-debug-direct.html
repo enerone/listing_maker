@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Listings - Debug Directo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-gray-50">
+    <div class="max-w-7xl mx-auto px-4 py-8">
+        <!-- Header -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">Listings Debug</h1>
+            <p class="text-gray-600">Versión simplificada para debug</p>
+        </div>
+
+        <!-- Status -->
+        <div id="status" class="mb-6">
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <p class="text-blue-800">🔄 Iniciando carga...</p>
+            </div>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="p-2 bg-blue-100 rounded-lg">
+                        <i class="fas fa-list text-blue-600"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Total Listings</p>
+                        <p id="totalListings" class="text-2xl font-semibold text-gray-900">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="p-2 bg-green-100 rounded-lg">
+                        <i class="fas fa-check-circle text-green-600"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Publicados</p>
+                        <p id="publishedListings" class="text-2xl font-semibold text-gray-900">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="p-2 bg-yellow-100 rounded-lg">
+                        <i class="fas fa-edit text-yellow-600"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Borradores</p>
+                        <p id="draftListings" class="text-2xl font-semibold text-gray-900">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="p-2 bg-purple-100 rounded-lg">
+                        <i class="fas fa-chart-line text-purple-600"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Confianza Avg</p>
+                        <p id="avgConfidence" class="text-2xl font-semibold text-gray-900">0%</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Listings Table -->
+        <div class="bg-white rounded-lg shadow overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h3 class="text-lg font-medium text-gray-900">Listings</h3>
+            </div>
+            
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Producto</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Categoría</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Precio</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="listingsTableBody" class="bg-white divide-y divide-gray-200">
+                        <tr>
+                            <td colspan="6" class="px-6 py-8 text-center text-gray-500">
+                                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                                <p>Cargando listings...</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:8000';
+        let allListings = [];
+
+        console.log('🚀 Debug listings page loaded');
+
+        // Initialize immediately
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM ready, loading listings...');
+            updateStatus('🔄 DOM cargado, iniciando fetch...');
+            loadListingsDebug();
+        });
+
+        function updateStatus(message) {
+            const statusEl = document.getElementById('status');
+            statusEl.innerHTML = `
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <p class="text-blue-800">${message}</p>
+                </div>
+            `;
+        }
+
+        async function loadListingsDebug() {
+            try {
+                updateStatus('🔄 Haciendo fetch a la API...');
+                console.log('Fetching from:', `${API_BASE_URL}/listings/`);
+
+                const response = await fetch(`${API_BASE_URL}/listings/`);
+                console.log('Response received:', response);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                updateStatus('🔄 Parseando JSON...');
+                const data = await response.json();
+                console.log('Data parsed:', data);
+
+                allListings = data.listings || [];
+                console.log('Listings extracted:', allListings.length);
+
+                updateStatus(`✅ ${allListings.length} listings cargados exitosamente`);
+                
+                updateStats();
+                renderTable();
+
+            } catch (error) {
+                console.error('Error loading listings:', error);
+                updateStatus(`❌ Error: ${error.message}`);
+                
+                document.getElementById('listingsTableBody').innerHTML = `
+                    <tr>
+                        <td colspan="6" class="px-6 py-8 text-center text-red-500">
+                            <i class="fas fa-exclamation-triangle text-2xl mb-2"></i>
+                            <p>Error: ${error.message}</p>
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+
+        function updateStats() {
+            const total = allListings.length;
+            const published = allListings.filter(l => l.status === 'published').length;
+            const drafts = allListings.filter(l => l.status === 'draft').length;
+            const avgConfidence = total > 0 ? Math.round(allListings.reduce((sum, l) => sum + (l.confidence_score || 0), 0) / total * 100) : 0;
+
+            document.getElementById('totalListings').textContent = total;
+            document.getElementById('publishedListings').textContent = published;
+            document.getElementById('draftListings').textContent = drafts;
+            document.getElementById('avgConfidence').textContent = avgConfidence + '%';
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('listingsTableBody');
+            
+            if (allListings.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="px-6 py-8 text-center text-gray-500">
+                            <i class="fas fa-inbox text-2xl mb-2"></i>
+                            <p>No hay listings disponibles</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = allListings.map(listing => `
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0 h-10 w-10">
+                                <div class="h-10 w-10 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                                    <i class="fas fa-box text-white"></i>
+                                </div>
+                            </div>
+                            <div class="ml-4">
+                                <div class="text-sm font-medium text-gray-900">${listing.product_name || 'Sin nombre'}</div>
+                                <div class="text-sm text-gray-500">${(listing.title || 'Sin título').substring(0, 50)}...</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            ${(listing.category || 'Sin categoría').replace('ProductCategory.', '')}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        $${listing.target_price || 'N/A'}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusClass(listing.status)}">
+                            ${listing.status || 'draft'}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        ${new Date(listing.created_at).toLocaleDateString('es-ES')}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <button onclick="viewListing(${listing.id})" class="text-blue-600 hover:text-blue-900 mr-2" title="Ver detalles">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button onclick="editListing(${listing.id})" class="text-green-600 hover:text-green-900 mr-2" title="Editar">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button onclick="deleteListing(${listing.id})" class="text-red-600 hover:text-red-900" title="Eliminar">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function getStatusClass(status) {
+            switch(status) {
+                case 'published': return 'bg-green-100 text-green-800';
+                case 'draft': return 'bg-yellow-100 text-yellow-800';
+                case 'archived': return 'bg-gray-100 text-gray-800';
+                default: return 'bg-gray-100 text-gray-800';
+            }
+        }
+
+        function viewListing(listingId) {
+            window.location.href = `/listing-details.html?id=${listingId}`;
+        }
+
+        function editListing(listingId) {
+            alert(`Editar listing ${listingId} - Función en desarrollo`);
+        }
+
+        function deleteListing(listingId) {
+            if (confirm('¿Estás seguro de que quieres eliminar este listing?')) {
+                alert(`Eliminar listing ${listingId} - Función en desarrollo`);
+            }
+        }
+    </script>
+</body>
+</html>

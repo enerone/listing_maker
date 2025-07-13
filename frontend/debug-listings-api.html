@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Listings API</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold mb-6">Debug: API de Listings</h1>
+        
+        <div class="bg-white p-6 rounded-lg shadow-md mb-6">
+            <h2 class="text-xl font-semibold mb-4">Pruebas de API</h2>
+            
+            <div class="space-y-4">
+                <button onclick="testAPI()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                    Probar API de Listings
+                </button>
+                
+                <button onclick="testSystemStatus()" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+                    Probar Estado del Sistema
+                </button>
+                
+                <button onclick="clearResults()" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">
+                    Limpiar Resultados
+                </button>
+            </div>
+        </div>
+        
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-xl font-semibold mb-4">Resultados</h2>
+            <div id="results" class="space-y-4">
+                <p class="text-gray-500">Los resultados aparecerán aquí...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:8000';
+
+        async function testAPI() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<p class="text-blue-500">🔄 Probando API...</p>';
+            
+            try {
+                console.log('Fetching from:', `${API_BASE_URL}/listings/`);
+                
+                const response = await fetch(`${API_BASE_URL}/listings/`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                console.log('Response:', response);
+                console.log('Status:', response.status);
+                console.log('OK:', response.ok);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                console.log('Data:', data);
+                
+                resultsDiv.innerHTML = `
+                    <div class="bg-green-50 p-4 rounded border border-green-200">
+                        <h3 class="font-semibold text-green-800 mb-2">✅ API Respuesta Exitosa</h3>
+                        <p class="text-sm mb-2"><strong>Status:</strong> ${response.status}</p>
+                        <p class="text-sm mb-2"><strong>Total Listings:</strong> ${data.listings ? data.listings.length : 0}</p>
+                        <p class="text-sm mb-4"><strong>Total Reportado:</strong> ${data.total || 'N/A'}</p>
+                        
+                        <h4 class="font-semibold mb-2">Primeros 3 Listings:</h4>
+                        <div class="space-y-2">
+                            ${data.listings ? data.listings.slice(0, 3).map(listing => `
+                                <div class="bg-white p-2 rounded border text-xs">
+                                    <p><strong>ID:</strong> ${listing.id}</p>
+                                    <p><strong>Nombre:</strong> ${listing.product_name}</p>
+                                    <p><strong>Categoría:</strong> ${listing.category}</p>
+                                    <p><strong>Precio:</strong> $${listing.target_price}</p>
+                                </div>
+                            `).join('') : '<p>No hay listings</p>'}
+                        </div>
+                        
+                        <details class="mt-4">
+                            <summary class="cursor-pointer font-semibold">Ver JSON completo</summary>
+                            <pre class="bg-gray-100 p-2 rounded mt-2 text-xs overflow-x-auto">${JSON.stringify(data, null, 2)}</pre>
+                        </details>
+                    </div>
+                `;
+                
+            } catch (error) {
+                console.error('Error:', error);
+                resultsDiv.innerHTML = `
+                    <div class="bg-red-50 p-4 rounded border border-red-200">
+                        <h3 class="font-semibold text-red-800 mb-2">❌ Error en API</h3>
+                        <p class="text-sm text-red-700">${error.message}</p>
+                        <p class="text-xs text-gray-600 mt-2">Ver consola para más detalles</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function testSystemStatus() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<p class="text-blue-500">🔄 Probando estado del sistema...</p>';
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/health`);
+                const data = await response.json();
+                
+                resultsDiv.innerHTML = `
+                    <div class="bg-green-50 p-4 rounded border border-green-200">
+                        <h3 class="font-semibold text-green-800 mb-2">✅ Sistema Funcionando</h3>
+                        <pre class="bg-gray-100 p-2 rounded text-xs">${JSON.stringify(data, null, 2)}</pre>
+                    </div>
+                `;
+                
+            } catch (error) {
+                console.error('Error:', error);
+                resultsDiv.innerHTML = `
+                    <div class="bg-red-50 p-4 rounded border border-red-200">
+                        <h3 class="font-semibold text-red-800 mb-2">❌ Error de Sistema</h3>
+                        <p class="text-sm text-red-700">${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '<p class="text-gray-500">Los resultados aparecerán aquí...</p>';
+        }
+    </script>
+</body>
+</html>

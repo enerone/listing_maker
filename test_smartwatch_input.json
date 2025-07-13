@@ -1,0 +1,24 @@
+{
+    "product_name": "Smartwatch Deportivo Premium",
+    "category": "ELECTRONICS",
+    "value_proposition": "Smartwatch avanzado con funciones deportivas profesionales y monitoreo de salud 24/7",
+    "target_customer_description": "Deportistas profesionales y entusiastas del fitness que buscan tecnología avanzada para optimizar su rendimiento",
+    "use_situations": [
+        "Entrenamientos de alta intensidad",
+        "Competiciones deportivas",
+        "Monitoreo diario de salud",
+        "Actividades al aire libre",
+        "Seguimiento del sueño"
+    ],
+    "competitive_advantages": [
+        "Batería de larga duración hasta 7 días",
+        "Resistencia al agua IPX8",
+        "GPS de alta precisión",
+        "Múltiples sensores deportivos",
+        "Pantalla AMOLED premium"
+    ],
+    "raw_specifications": "Pantalla AMOLED 1.4 pulgadas, batería 7 días, GPS dual band, sensor cardíaco óptico, resistente al agua IPX8, procesador dual core",
+    "box_content_description": "Smartwatch premium, cargador magnético, manual de usuario, correas deportivas adicionales, protector de pantalla",
+    "warranty_info": "2 años de garantía internacional con servicio técnico especializado",
+    "target_price": 249.99
+}

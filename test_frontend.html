@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Sistema de Listings</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold text-center mb-8">Test Sistema de Listings</h1>
+        
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4">Test de Endpoints</h2>
+            
+            <div class="space-y-4">
+                <div>
+                    <button onclick="testHealthCheck()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                        Test Health Check
+                    </button>
+                    <span id="health-result" class="ml-4 text-sm"></span>
+                </div>
+                
+                <div>
+                    <button onclick="testSuggestions()" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+                        Test Sugerencias
+                    </button>
+                    <span id="suggestions-result" class="ml-4 text-sm"></span>
+                </div>
+                
+                <div>
+                    <button onclick="testCreateListing()" class="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600">
+                        Test Crear Listing
+                    </button>
+                    <span id="create-result" class="ml-4 text-sm"></span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <h2 class="text-xl font-semibold mb-4">Resultados</h2>
+            <pre id="results" class="bg-gray-100 p-4 rounded text-sm overflow-auto max-h-96"></pre>
+        </div>
+    </div>
+    
+    <script>
+        const API_BASE = 'http://localhost:8000';
+        
+        function log(message) {
+            const results = document.getElementById('results');
+            results.textContent += new Date().toLocaleTimeString() + ': ' + message + '\n';
+            results.scrollTop = results.scrollHeight;
+        }
+        
+        async function testHealthCheck() {
+            const resultSpan = document.getElementById('health-result');
+            try {
+                resultSpan.textContent = 'Cargando...';
+                const response = await fetch(`${API_BASE}/listings/health`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultSpan.textContent = '✅ OK';
+                    resultSpan.className = 'ml-4 text-sm text-green-600';
+                    log('Health check: OK - ' + JSON.stringify(data));
+                } else {
+                    resultSpan.textContent = '❌ Error';
+                    resultSpan.className = 'ml-4 text-sm text-red-600';
+                    log('Health check: Error - ' + JSON.stringify(data));
+                }
+            } catch (error) {
+                resultSpan.textContent = '❌ Error';
+                resultSpan.className = 'ml-4 text-sm text-red-600';
+                log('Health check: Error - ' + error.message);
+            }
+        }
+        
+        async function testSuggestions() {
+            const resultSpan = document.getElementById('suggestions-result');
+            try {
+                resultSpan.textContent = 'Cargando...';
+                const response = await fetch(`${API_BASE}/listings/suggestions`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        product_name: 'Smartwatch Deportivo',
+                        description: 'Smartwatch con monitor de frecuencia cardíaca, GPS y resistencia al agua para deportistas'
+                    })
+                });
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultSpan.textContent = '✅ OK';
+                    resultSpan.className = 'ml-4 text-sm text-green-600';
+                    log('Sugerencias: OK - ' + JSON.stringify(data, null, 2));
+                } else {
+                    resultSpan.textContent = '❌ Error';
+                    resultSpan.className = 'ml-4 text-sm text-red-600';
+                    log('Sugerencias: Error - ' + JSON.stringify(data, null, 2));
+                }
+            } catch (error) {
+                resultSpan.textContent = '❌ Error';
+                resultSpan.className = 'ml-4 text-sm text-red-600';
+                log('Sugerencias: Error - ' + error.message);
+            }
+        }
+        
+        async function testCreateListing() {
+            const resultSpan = document.getElementById('create-result');
+            try {
+                resultSpan.textContent = 'Cargando...';
+                const response = await fetch(`${API_BASE}/listings/create-simple`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        product_name: 'Smartwatch Deportivo',
+                        description: 'Smartwatch con monitor de frecuencia cardíaca, GPS y resistencia al agua para deportistas',
+                        category: 'Electronics',
+                        target_price: 149.99,
+                        features: ['Monitor de frecuencia cardíaca', 'GPS integrado', 'Resistencia al agua IP68', 'Batería de 7 días'],
+                        target_audience: 'Deportistas y entusiastas del fitness entre 25-45 años',
+                        use_cases: ['Entrenamientos', 'Monitoreo de salud', 'Actividades al aire libre'],
+                        keywords: ['smartwatch', 'deportivo', 'fitness', 'GPS', 'monitor cardiaco'],
+                        dimensions: '42 x 36 x 10.7 mm',
+                        weight: '32g',
+                        materials: 'Aluminio y silicona',
+                        color: 'Negro',
+                        compatibility: 'iOS y Android',
+                        box_contents: ['Smartwatch', 'Cable de carga', 'Manual de usuario'],
+                        main_competitor: 'Apple Watch'
+                    })
+                });
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultSpan.textContent = '✅ OK';
+                    resultSpan.className = 'ml-4 text-sm text-green-600';
+                    log('Crear listing: OK - ' + JSON.stringify(data, null, 2));
+                } else {
+                    resultSpan.textContent = '❌ Error';
+                    resultSpan.className = 'ml-4 text-sm text-red-600';
+                    log('Crear listing: Error - ' + JSON.stringify(data, null, 2));
+                }
+            } catch (error) {
+                resultSpan.textContent = '❌ Error';
+                resultSpan.className = 'ml-4 text-sm text-red-600';
+                log('Crear listing: Error - ' + error.message);
+            }
+        }
+        
+        // Auto-test al cargar la página
+        window.onload = function() {
+            log('Iniciando tests automáticos...');
+            testHealthCheck();
+        };
+    </script>
+</body>
+</html>

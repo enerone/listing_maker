@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test de Aplicación de Recomendaciones</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold text-gray-900 mb-8">🧪 Test de Aplicación de Recomendaciones</h1>
+        
+        <div class="bg-white rounded-lg shadow p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4">Estado del Listing 31</h2>
+            <div id="listingInfo" class="space-y-2">
+                <p>Cargando...</p>
+            </div>
+            <button onclick="loadListingInfo()" class="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+                🔄 Recargar Datos
+            </button>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4">Aplicar Recomendaciones de Prueba</h2>
+            <div class="space-y-4">
+                <button onclick="applyRecommendation('seo_visual_agent', 'Include brand name for better discoverability')" 
+                        class="w-full px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">
+                    🏷️ Aplicar: Agregar marca al título
+                </button>
+                <button onclick="applyRecommendation('pricing_strategy_agent', 'Adjust price to be more competitive')" 
+                        class="w-full px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600">
+                    💰 Aplicar: Ajustar precio
+                </button>
+                <button onclick="applyRecommendation('content_agent', 'Expand description with more benefits')" 
+                        class="w-full px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600">
+                    📝 Aplicar: Expandir descripción
+                </button>
+                <button onclick="applyRecommendation('seo_visual_agent', 'Add keyword optimization for SEO')" 
+                        class="w-full px-4 py-2 bg-indigo-500 text-white rounded hover:bg-indigo-600">
+                    🔍 Aplicar: Optimizar keywords
+                </button>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-xl font-semibold mb-4">📊 Historial de Cambios</h2>
+            <div id="changeHistory" class="space-y-2">
+                <p class="text-gray-500">No hay cambios registrados</p>
+            </div>
+        </div>
+
+        <!-- Toast Notification -->
+        <div id="toast" class="fixed bottom-4 right-4 px-6 py-3 rounded-lg shadow-lg transform transition-transform duration-300 translate-y-full hidden">
+            <span id="toastMessage"></span>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:8000';
+        const LISTING_ID = 31;
+        let currentListing = null;
+        let changeHistory = [];
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            loadListingInfo();
+        });
+
+        // Load listing information
+        async function loadListingInfo() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/listings/${LISTING_ID}`);
+                if (!response.ok) throw new Error('Error al cargar listing');
+                
+                const data = await response.json();
+                currentListing = data.listing;
+                
+                displayListingInfo(currentListing);
+                showToast('✅ Datos cargados exitosamente', 'success');
+            } catch (error) {
+                console.error('Error loading listing:', error);
+                showToast('❌ Error al cargar el listing', 'error');
+            }
+        }
+
+        // Display listing information
+        function displayListingInfo(listing) {
+            const infoEl = document.getElementById('listingInfo');
+            infoEl.innerHTML = `
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <strong>ID:</strong> ${listing.id}
+                    </div>
+                    <div>
+                        <strong>Versión:</strong> ${listing.version}
+                    </div>
+                    <div class="col-span-2">
+                        <strong>Título:</strong> ${listing.title || 'Sin título'}
+                    </div>
+                    <div>
+                        <strong>Precio:</strong> $${listing.target_price || 0}
+                    </div>
+                    <div>
+                        <strong>Estado:</strong> ${listing.status}
+                    </div>
+                    <div class="col-span-2">
+                        <strong>Keywords:</strong> ${Array.isArray(listing.backend_keywords) ? listing.backend_keywords.length + ' keywords' : 'Sin keywords'}
+                    </div>
+                    <div class="col-span-2">
+                        <strong>Descripción:</strong> ${(listing.description || '').length} caracteres
+                    </div>
+                </div>
+            `;
+        }
+
+        // Apply recommendation
+        async function applyRecommendation(agentName, recommendationText) {
+            try {
+                showToast('⏳ Aplicando recomendación...', 'info');
+                
+                const response = await fetch(`${API_BASE_URL}/api/listings/${LISTING_ID}/apply-recommendation`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        agent_name: agentName,
+                        recommendation_text: recommendationText
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Error ${response.status}: ${response.statusText}`);
+                }
+
+                const result = await response.json();
+                
+                // Add to change history
+                changeHistory.unshift({
+                    timestamp: new Date().toLocaleString('es-ES'),
+                    agent: agentName,
+                    recommendation: recommendationText,
+                    success: result.success,
+                    updated_fields: result.updated_fields || {}
+                });
+                
+                // Update change history display
+                updateChangeHistory();
+                
+                // Reload listing data
+                await loadListingInfo();
+                
+                showToast('✅ Recomendación aplicada exitosamente', 'success');
+                
+            } catch (error) {
+                console.error('Error applying recommendation:', error);
+                showToast(`❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        // Update change history display
+        function updateChangeHistory() {
+            const historyEl = document.getElementById('changeHistory');
+            if (changeHistory.length === 0) {
+                historyEl.innerHTML = '<p class="text-gray-500">No hay cambios registrados</p>';
+                return;
+            }
+            
+            historyEl.innerHTML = changeHistory.map(change => `
+                <div class="border rounded p-3 ${change.success ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}">
+                    <div class="font-medium">${change.agent}</div>
+                    <div class="text-sm text-gray-600">${change.recommendation}</div>
+                    <div class="text-xs text-gray-500 mt-1">${change.timestamp}</div>
+                    ${Object.keys(change.updated_fields).length > 0 ? 
+                        `<div class="text-xs text-blue-600 mt-1">Campos actualizados: ${Object.keys(change.updated_fields).join(', ')}</div>` 
+                        : ''
+                    }
+                </div>
+            `).join('');
+        }
+
+        // Show toast notification
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toastMessage');
+            
+            // Set message
+            toastMessage.textContent = message;
+            
+            // Set color based on type
+            toast.className = 'fixed bottom-4 right-4 px-6 py-3 rounded-lg shadow-lg transform transition-transform duration-300';
+            switch (type) {
+                case 'success':
+                    toast.classList.add('bg-green-500', 'text-white');
+                    break;
+                case 'error':
+                    toast.classList.add('bg-red-500', 'text-white');
+                    break;
+                case 'info':
+                    toast.classList.add('bg-blue-500', 'text-white');
+                    break;
+                default:
+                    toast.classList.add('bg-gray-500', 'text-white');
+            }
+            
+            // Show toast
+            toast.classList.remove('hidden', 'translate-y-full');
+            
+            // Hide after 3 seconds
+            setTimeout(() => {
+                toast.classList.add('translate-y-full');
+                setTimeout(() => {
+                    toast.classList.add('hidden');
+                    toast.className = 'fixed bottom-4 right-4 px-6 py-3 rounded-lg shadow-lg transform transition-transform duration-300 translate-y-full hidden';
+                }, 300);
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

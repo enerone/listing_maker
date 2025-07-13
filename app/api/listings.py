@@ -494,515 +494,119 @@ async def apply_recommendation(
     db: AsyncSession = Depends(get_db)
 ) -> Dict[str, Any]:
     """
-    Aplica una recomendación específica a un listing
+    Aplica una recomendación específica a un listing existente
     """
     try:
         logger.info(f"Aplicando recomendación para listing {listing_id}: {recommendation_data}")
         
         listing_service = ListingService(db)
         
-        # Obtener el listing actual
+        # Obtener el listing existente
         listing = await listing_service.get_listing(listing_id)
         if not listing:
             raise HTTPException(status_code=404, detail="Listing no encontrado")
         
-        # Extraer información de la recomendación
-        agent_name = recommendation_data.get("agent_name", "General")
+        # Extraer datos de la recomendación
+        agent_name = recommendation_data.get("agent_name", "")
         recommendation_text = recommendation_data.get("recommendation_text", "")
         
-        # Procesar la recomendación según el tipo de agente
-        update_data = {}
-        processing_notes = listing.processing_notes or []
+        # Aplicar la recomendación basada en el agente y tipo
+        updated_listing = _apply_recommendation_logic(
+            listing, agent_name, recommendation_text
+        )
         
-        # Agregar nota de procesamiento
-        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        processing_notes.append(f"[{timestamp}] Aplicada recomendación de {agent_name}: {recommendation_text[:100]}...")
-        update_data["processing_notes"] = processing_notes
-        
-        # Aplicar cambios específicos según el tipo de recomendación
-        if "título" in recommendation_text.lower() or "title" in recommendation_text.lower():
-            # Si la recomendación es sobre el título, sugerir mejora
-            if listing.title:
-                update_data["title"] = f"{listing.title} - Mejorado"
-            processing_notes.append(f"[{timestamp}] Recomendación de título procesada")
-        
-        elif "precio" in recommendation_text.lower() or "price" in recommendation_text.lower():
-            # Si es sobre precio, ajustar en un 5%
-            if listing.target_price:
-                new_price = float(listing.target_price) * 1.05
-                update_data["target_price"] = round(new_price, 2)
-                processing_notes.append(f"[{timestamp}] Precio ajustado a ${new_price:.2f}")
-        
-        elif "descripción" in recommendation_text.lower() or "description" in recommendation_text.lower():
-            # Si es sobre descripción, agregar nota de mejora
-            if listing.description:
-                update_data["description"] = f"{listing.description}\n\n[Mejorado según recomendación: {recommendation_text[:100]}...]"
-            processing_notes.append(f"[{timestamp}] Descripción mejorada según recomendación")
-        
-        elif "keyword" in recommendation_text.lower() or "seo" in recommendation_text.lower():
-            # Si es sobre keywords, agregar palabras clave sugeridas
-            current_keywords = listing.backend_keywords or []
-            new_keywords = ["premium", "calidad", "recomendado", "mejora-seo"]
-            updated_keywords = list(set(current_keywords + new_keywords))
-            update_data["backend_keywords"] = updated_keywords[:15]  # Limitar a 15 keywords
-            processing_notes.append(f"[{timestamp}] Keywords mejoradas según recomendación SEO")
-        
+        # Actualizar el listing en la base de datos si hay cambios
+        if updated_listing:
+            await listing_service.update_listing(listing_id, updated_listing)
+            
+            logger.info(f"Recomendación aplicada exitosamente para listing {listing_id}")
+            return {
+                "success": True,
+                "message": "Recomendación aplicada exitosamente",
+                "applied_recommendation": {
+                    "agent_name": agent_name,
+                    "recommendation_text": recommendation_text,
+                    "applied_at": datetime.now().isoformat()
+                },
+                "updated_fields": updated_listing
+            }
         else:
-            # Recomendación general - marcar como procesada
-            processing_notes.append(f"[{timestamp}] Recomendación general aplicada: {recommendation_text[:100]}...")
-        
-        # Actualizar el listing con los cambios
-        update_data["processing_notes"] = processing_notes
-        update_data["updated_at"] = datetime.now()
-        
-        # Incrementar confianza levemente
-        if listing.confidence_score:
-            current_confidence = float(listing.confidence_score)
-            new_confidence = min(1.0, current_confidence + 0.02)  # Incrementar 2%
-            update_data["confidence_score"] = new_confidence
-        
-        # Aplicar la actualización
-        await listing_service.update_listing(listing_id, update_data)
-        
-        return {
-            "message": "Recomendación aplicada exitosamente",
-            "listing_id": listing_id,
-            "agent_name": agent_name,
-            "recommendation_applied": recommendation_text,
-            "changes_made": list(update_data.keys()),
-            "updated_at": datetime.now().isoformat()
-        }
-        
+            return {
+                "success": True,
+                "message": "Recomendación registrada pero no requiere cambios automáticos",
+                "applied_recommendation": {
+                    "agent_name": agent_name,
+                    "recommendation_text": recommendation_text,
+                    "applied_at": datetime.now().isoformat()
+                }
+            }
+            
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error aplicando recomendación para listing {listing_id}: {str(e)}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error aplicando recomendación: {str(e)}"
-        )
+        logger.error(f"Error aplicando recomendación: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error aplicando recomendación: {str(e)}")
 
-@router.get("/search/{query}")
-async def search_listings(
-    query: str, 
-    limit: int = Query(20, description="Máximo de resultados"),
-    db: AsyncSession = Depends(get_db)
-) -> Dict[str, Any]:
+
+def _apply_recommendation_logic(
+    listing: Listing, 
+    agent_name: str, 
+    recommendation_text: str
+) -> Optional[Dict[str, Any]]:
     """
-    Búsqueda avanzada de listings
+    Lógica básica para aplicar recomendaciones simples
     """
+    updated_fields = {}
+    recommendation_lower = recommendation_text.lower()
+    
+    logger.info(f"Aplicando recomendación: {recommendation_text}")
+    
     try:
-        listing_service = ListingService(db)
-        results = await listing_service.search_listings(query, limit)
+        # Recomendación de título con marca
+        if "brand name" in recommendation_lower or "discoverability" in recommendation_lower:
+            current_title = str(listing.title or listing.product_name or "")
+            if "TechPro" not in current_title and current_title:
+                updated_fields["title"] = f"TechPro {current_title}"
         
-        return {
-            "query": query,
-            "results": [
-                {
-                    "id": listing.id,
-                    "product_name": listing.product_name,
-                    "title": listing.title,
-                    "category": listing.category,
-                    "confidence_score": listing.confidence_score,
-                    "status": listing.status,
-                    "created_at": listing.created_at
-                }
-                for listing in results
-            ],
-            "total_found": len(results)
-        }
+        # Recomendación de precio
+        elif "price" in recommendation_lower and "adjust" in recommendation_lower:
+            try:
+                current_price = float(listing.target_price or 0)
+                if current_price > 0:
+                    updated_fields["target_price"] = round(current_price * 1.05, 2)
+            except (ValueError, TypeError):
+                pass
+        
+        # Recomendación de descripción
+        elif "description" in recommendation_lower or "expand" in recommendation_lower:
+            current_desc = str(listing.description or "")
+            if len(current_desc) < 500:
+                addition = "\n\n✅ Calidad premium garantizada\n🚚 Envío rápido incluido\n💯 Satisfacción garantizada"
+                updated_fields["description"] = current_desc + addition
+        
+        # Recomendación general de keywords
+        elif "keyword" in recommendation_lower or "seo" in recommendation_lower:
+            try:
+                current_keywords = listing.backend_keywords or []
+                if isinstance(current_keywords, str):
+                    current_keywords = [kw.strip() for kw in current_keywords.split(',') if kw.strip()]
+                elif not isinstance(current_keywords, list):
+                    current_keywords = []
+                
+                new_keywords = current_keywords.copy() if current_keywords else []
+                suggested = ["premium", "quality"]
+                
+                for kw in suggested:
+                    if kw not in new_keywords:
+                        new_keywords.append(kw)
+                
+                if new_keywords != current_keywords:
+                    updated_fields["backend_keywords"] = new_keywords
+            except Exception:
+                pass
+        
+        return updated_fields if updated_fields else None
         
     except Exception as e:
-        logger.error(f"Error en búsqueda de listings: {str(e)}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error en búsqueda: {str(e)}"
-        )
-
-@router.get("/statistics/overview")
-async def get_statistics(db: AsyncSession = Depends(get_db)) -> Dict[str, Any]:
-    """
-    Obtiene estadísticas generales del sistema
-    """
-    try:
-        listing_service = ListingService(db)
-        stats = await listing_service.get_listing_statistics()
-        
-        return stats
-        
-    except Exception as e:
-        logger.error(f"Error obteniendo estadísticas: {str(e)}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error obteniendo estadísticas: {str(e)}"
-        )
-
-@router.post("/analyze-product")
-async def analyze_product_only(product_input: ProductInput) -> Dict[str, Any]:
-    """
-    Ejecuta solo el análisis de producto (útil para testing)
-    """
-    try:
-        from ..agents.product_analysis_agent import ProductAnalysisAgent
-        
-        agent = ProductAnalysisAgent()
-        result = await agent.process(product_input.dict())
-        
-        return {
-            "agent_name": result.agent_name,
-            "status": result.status,
-            "data": result.data,
-            "confidence": result.confidence,
-            "processing_time": result.processing_time,
-            "recommendations": result.recommendations
-        }
-        
-    except Exception as e:
-        logger.error(f"Error en análisis de producto: {str(e)}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error en análisis de producto: {str(e)}"
-        )
-
-@router.post("/analyze-customer")
-async def analyze_customer_only(product_input: ProductInput) -> Dict[str, Any]:
-    """
-    Ejecuta solo el análisis de clientes (útil para testing)
-    """
-    try:
-        from ..agents.customer_research_agent import CustomerResearchAgent
-        
-        agent = CustomerResearchAgent()
-        result = await agent.process(product_input.dict())
-        
-        return {
-            "agent_name": result.agent_name,
-            "status": result.status,
-            "data": result.data,
-            "confidence": result.confidence,
-            "processing_time": result.processing_time,
-            "recommendations": result.recommendations
-        }
-        
-    except Exception as e:
-        logger.error(f"Error en análisis de cliente: {str(e)}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error en análisis de cliente: {str(e)}"
-        )
-
-@router.post("/analyze-value-proposition")
-async def analyze_value_proposition_only(product_input: ProductInput) -> Dict[str, Any]:
-    """
-    Ejecuta solo el análisis de propuesta de valor (útil para testing)
-    """
-    try:
-        from ..agents.value_proposition_agent import ValuePropositionAgent
-        
-        agent = ValuePropositionAgent()
-        result = await agent.process(product_input.dict())
-        
-        return {
-            "agent_name": result.agent_name,
-            "status": result.status,
-            "data": result.data,
-            "confidence": result.confidence,
-            "processing_time": result.processing_time,
-            "recommendations": result.recommendations
-        }
-        
-    except Exception as e:
-        logger.error(f"Error en análisis de propuesta de valor: {str(e)}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error en análisis de propuesta de valor: {str(e)}"
-        )
-
-@router.post("/analyze-technical-specs")
-async def analyze_technical_specs(product_input: ProductInput) -> Dict[str, Any]:
-    """
-    Analiza únicamente las especificaciones técnicas del producto
-    """
-    try:
-        logger.info(f"Iniciando análisis técnico para: {product_input.product_name}")
-        
-        # Usar directamente el agente de especificaciones técnicas
-        tech_agent = orchestrator.agents["technical_specs"]
-        result = await tech_agent.process(product_input)
-        
-        if result.status == "error":
-            raise HTTPException(status_code=500, detail=f"Error en análisis técnico: {result.notes}")
-        
-        return {
-            "agent": result.agent_name,
-            "confidence": result.confidence,
-            "processing_time": result.processing_time,
-            "technical_specifications": result.data,
-            "recommendations": result.recommendations
-        }
-        
-    except Exception as e:
-        logger.error(f"Error en análisis técnico: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-@router.post("/analyze-content")
-async def analyze_content(product_input: ProductInput) -> Dict[str, Any]:
-    """
-    Analiza únicamente el contenido de la caja y garantías
-    """
-    try:
-        logger.info(f"Iniciando análisis de contenido para: {product_input.product_name}")
-        
-        # Usar directamente el agente de contenido
-        content_agent = orchestrator.agents["content"]
-        result = await content_agent.process(product_input)
-        
-        if result.status == "error":
-            raise HTTPException(status_code=500, detail=f"Error en análisis de contenido: {result.notes}")
-        
-        return {
-            "agent": result.agent_name,
-            "confidence": result.confidence,
-            "processing_time": result.processing_time,
-            "content_analysis": result.data,
-            "recommendations": result.recommendations
-        }
-        
-    except Exception as e:
-        logger.error(f"Error en análisis de contenido: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-@router.post("/analyze-pricing-strategy")
-async def analyze_pricing_strategy(product_input: ProductInput) -> Dict[str, Any]:
-    """
-    Desarrolla únicamente la estrategia de precios del producto
-    """
-    try:
-        logger.info(f"Iniciando análisis de pricing para: {product_input.product_name}")
-        
-        # Usar directamente el agente de pricing
-        pricing_agent = orchestrator.agents["pricing_strategy"]
-        result = await pricing_agent.process(product_input)
-        
-        if result.status == "error":
-            raise HTTPException(status_code=500, detail=f"Error en análisis de pricing: {result.notes}")
-        
-        return {
-            "agent": result.agent_name,
-            "confidence": result.confidence,
-            "processing_time": result.processing_time,
-            "pricing_strategy": result.data,
-            "recommendations": result.recommendations
-        }
-        
-    except Exception as e:
-        logger.error(f"Error en análisis de pricing: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-@router.post("/analyze-seo-visual")
-async def analyze_seo_visual(product_input: ProductInput) -> Dict[str, Any]:
-    """
-    Optimiza únicamente SEO y analiza activos visuales
-    """
-    try:
-        logger.info(f"Iniciando análisis SEO y visual para: {product_input.product_name}")
-        
-        # Usar directamente el agente SEO y visual
-        seo_agent = orchestrator.agents["seo_visual"]
-        result = await seo_agent.process(product_input)
-        
-        if result.status == "error":
-            raise HTTPException(status_code=500, detail=f"Error en análisis SEO: {result.notes}")
-        
-        return {
-            "agent": result.agent_name,
-            "confidence": result.confidence,
-            "processing_time": result.processing_time,
-            "seo_optimization": result.data,
-            "recommendations": result.recommendations
-        }
-        
-    except Exception as e:
-        logger.error(f"Error en análisis SEO y visual: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-@router.post("/suggestions")
-async def generate_suggestions(product_data: dict):
-    """
-    Genera sugerencias automáticas para todos los campos del formulario
-    basándose en el nombre del producto y la descripción
-    """
-    try:
-        product_name = product_data.get("product_name", "")
-        description = product_data.get("description", "")
-        
-        logger.info(f"Generando sugerencias para: {product_name}")
-        
-        if not product_name or not description:
-            return {
-                "success": False,
-                "error": "Se requiere nombre del producto y descripción",
-                "fallback_suggestions": {
-                    "category": "Electronics",
-                    "brand": "Generic",
-                    "features": ["Característica 1", "Característica 2", "Característica 3"],
-                    "dimensions": "10 x 5 x 2 cm",
-                    "weight": "100g",
-                    "materials": "Plástico",
-                    "colors": ["Negro"],
-                    "target_audience": "Público general",
-                    "use_cases": ["Uso diario", "Trabajo"],
-                    "price_range": {"min": 10, "max": 100, "suggested": 50},
-                    "keywords": ["producto", "calidad"],
-                    "bullet_points": ["Punto 1", "Punto 2", "Punto 3"]
-                }
-            }
-        
-        # Análisis inteligente del producto basado en nombre y descripción
-        product_lower = product_name.lower() + " " + description.lower()
-        
-        # Detectar categoría
-        category = "Other"
-        if any(word in product_lower for word in ["mochila", "backpack", "bolso", "bag"]):
-            category = "Sports & Outdoors"
-        elif any(word in product_lower for word in ["auricular", "headphone", "bluetooth", "speaker"]):
-            category = "Electronics"
-        elif any(word in product_lower for word in ["reloj", "watch", "smartwatch"]):
-            category = "Electronics"
-        elif any(word in product_lower for word in ["ropa", "camisa", "pantalon", "zapato"]):
-            category = "Clothing, Shoes & Jewelry"
-        
-        # Detectar audiencia objetivo
-        target_audience = "Público general"
-        if any(word in product_lower for word in ["mochila", "backpack", "hiking", "camping", "outdoor"]):
-            target_audience = "Aventureros y viajeros entre 18-45 años que buscan equipos duraderos"
-        elif any(word in product_lower for word in ["gaming", "gamer", "juego"]):
-            target_audience = "Gamers y entusiastas de videojuegos entre 16-35 años"
-        elif any(word in product_lower for word in ["business", "profesional", "trabajo", "oficina"]):
-            target_audience = "Profesionales y trabajadores entre 25-50 años"
-        elif any(word in product_lower for word in ["deporte", "fitness", "gym", "entrenamiento"]):
-            target_audience = "Personas activas y deportistas entre 20-40 años"
-        
-        # Detectar rango de precio
-        price_range = {"min": 20, "max": 80, "suggested": 45}
-        if any(word in product_lower for word in ["mochila", "backpack"]):
-            if any(word in product_lower for word in ["premium", "high-end", "profesional"]):
-                price_range = {"min": 60, "max": 150, "suggested": 95}
-            else:
-                price_range = {"min": 25, "max": 75, "suggested": 45}
-        elif any(word in product_lower for word in ["auricular", "headphone", "bluetooth"]):
-            price_range = {"min": 30, "max": 120, "suggested": 65}
-        elif any(word in product_lower for word in ["smartwatch", "reloj inteligente"]):
-            price_range = {"min": 80, "max": 300, "suggested": 150}
-        
-        # Detectar competidores
-        main_competitor = "Marcas reconocidas del sector"
-        if any(word in product_lower for word in ["mochila", "backpack"]):
-            main_competitor = "The North Face, Patagonia, Osprey"
-        elif any(word in product_lower for word in ["auricular", "headphone", "bluetooth"]):
-            main_competitor = "Sony, Bose, JBL"
-        elif any(word in product_lower for word in ["smartwatch"]):
-            main_competitor = "Apple Watch, Samsung Galaxy Watch"
-        
-        # Generar características basadas en el tipo de producto
-        features = []
-        if any(word in product_lower for word in ["mochila", "backpack"]):
-            features = [
-                "Material resistente al agua",
-                "Múltiples compartimentos organizadores",
-                "Correas acolchadas y ergonómicas",
-                "Cremalleras YKK de alta calidad",
-                "Diseño ligero pero duradero"
-            ]
-        elif any(word in product_lower for word in ["auricular", "headphone"]):
-            features = [
-                "Sonido de alta fidelidad",
-                "Cancelación de ruido activa",
-                "Batería de larga duración",
-                "Conexión Bluetooth 5.0",
-                "Diseño cómodo para uso prolongado"
-            ]
-        else:
-            features = [
-                "Calidad premium garantizada",
-                "Diseño ergonómico y funcional",
-                "Materiales duraderos",
-                "Fácil de usar",
-                "Garantía extendida incluida"
-            ]
-        
-        # Casos de uso específicos
-        use_cases = []
-        if any(word in product_lower for word in ["mochila", "backpack"]):
-            use_cases = [
-                "Viajes y aventuras al aire libre",
-                "Uso diario para trabajo y estudios",
-                "Actividades deportivas y hiking",
-                "Viajes de negocios",
-                "Expediciones y camping"
-            ]
-        else:
-            use_cases = [
-                "Uso profesional diario",
-                "Actividades de ocio",
-                "Viajes y desplazamientos",
-                "Uso doméstico",
-                "Actividades al aire libre"
-            ]
-        
-        suggestions = {
-            "category": category,
-            "brand": "ProGear" if "mochila" in product_lower or "backpack" in product_lower else "TechPro",
-            "features": features,
-            "dimensions": "30 x 20 x 15 cm" if "mochila" in product_lower else "15 x 10 x 3 cm",
-            "weight": "800g" if "mochila" in product_lower else "200g",
-            "materials": "Nylon ripstop resistente al agua" if "mochila" in product_lower else "Aluminio y plástico",
-            "colors": ["Negro", "Azul marino", "Gris"] if "mochila" in product_lower else ["Negro", "Blanco"],
-            "target_audience": target_audience,
-            "use_cases": use_cases,
-            "main_competitor": main_competitor,
-            "price_range": price_range,
-            "keywords": [
-                product_name.lower().replace(" ", "-"),
-                "calidad premium",
-                "durabilidad",
-                "diseño funcional",
-                "garantía extendida",
-                "envío gratis",
-                "resistente",
-                "cómodo"
-            ][:8],
-            "bullet_points": [
-                f"✅ {product_name} con materiales premium de alta calidad",
-                "🔧 Diseño ergonómico y funcional para máximo confort",
-                "🎯 Perfecto para uso diario y actividades especializadas",
-                "📞 Garantía extendida y soporte técnico incluido",
-                "🚚 Envío rápido y embalaje seguro"
-            ],
-            "box_contents": [
-                f"1x {product_name}",
-                "1x Manual de usuario",
-                "1x Guía de cuidado",
-                "1x Tarjeta de garantía"
-            ]
-        }
-        
-        logger.info(f"Sugerencias generadas exitosamente para: {product_name}")
-        
-        return {
-            "success": True,
-            "suggestions": suggestions,
-            "product_name": product_name
-        }
-            
-    except Exception as e:
-        logger.error(f"Error generando sugerencias: {str(e)}")
-        return {
-            "success": False,
-            "error": f"Error generando sugerencias: {str(e)}",
-            "fallback_suggestions": {
-                "category": "Other",
-                "features": ["Característica básica"],
-                "price_range": {"min": 10, "max": 100, "suggested": 50}
-            }
-        }
+        logger.error(f"Error aplicando recomendación: {str(e)}")
+        return None

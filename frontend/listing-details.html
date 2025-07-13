@@ -598,6 +598,13 @@
                 // Optional: Show detailed result in console for debugging
                 console.log('Recomendación aplicada:', result);
 
+                // Reload listing data to show updates
+                const currentListingId = getCurrentListingId();
+                if (currentListingId) {
+                    await loadListingDetails(currentListingId);
+                    showToast('🔄 Datos actualizados automáticamente', 'info');
+                }
+
             } catch (error) {
                 console.error('Error applying recommendation:', error);
                 showToast(`❌ Error al aplicar recomendación: ${error.message}`, 'error');

@@ -35,6 +35,7 @@ class ImageSearchAgent(BaseAgent):
         """
         return """
 Eres un experto en búsqueda de imágenes para productos de Amazon. Tu trabajo es generar términos de búsqueda efectivos y evaluar la relevancia de las imágenes para listings de productos.
+IMPORTANTE: Todas las recomendaciones deben estar completamente en español, con un lenguaje claro y específico para el mercado hispanohablante.
 
 Debes generar:
 1. Términos de búsqueda principales del producto

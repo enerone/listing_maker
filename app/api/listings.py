@@ -9,6 +9,7 @@ from ..agents.listing_orchestrator import ListingOrchestrator
 from ..database import get_db
 from ..services.listing_service import ListingService
 from ..services.recommendation_service import RecommendationService
+from ..services.ollama_service import get_ollama_service
 
 logger = logging.getLogger(__name__)
 
@@ -96,7 +97,7 @@ def _generate_category_specific_suggestions(category: str, product_name: str) ->
 LISTING_NOT_FOUND = "Listing no encontrado"
 INTERNAL_SERVER_ERROR = "Error interno del servidor"
 
-router = APIRouter(prefix="/listings", tags=["listings"])
+router = APIRouter(tags=["listings"])
 
 # Instancia global del orquestador
 orchestrator = ListingOrchestrator()
@@ -945,4 +946,312 @@ async def get_listing_detail(
         raise HTTPException(
             status_code=500,
             detail=f"Error obteniendo listing: {str(e)}"
+        )
+
+@router.post("/review-listing")
+async def review_listing(
+    review_data: Dict[str, Any],
+    request: Request
+) -> Dict[str, Any]:
+    """
+    Revisa y optimiza un listing completo usando el agente revisor
+    """
+    try:
+        logger.info(f"Iniciando revisión de listing para: {review_data.get('product_data', {}).get('product_name', 'Unknown')}")
+        
+        # Importar el agente revisor
+        from ..agents.review_agent import ReviewAgent
+        
+        # Crear y configurar el agente revisor
+        review_agent = ReviewAgent()
+        
+        # Ejecutar la revisión
+        result = await review_agent.process(review_data)
+        
+        # Limpiar recursos del agente
+        await review_agent.cleanup()
+        
+        if result.status == "success":
+            return {
+                "success": True,
+                "reviewed_listing": result.data,
+                "confidence": result.confidence,
+                "processing_time": result.processing_time,
+                "recommendations": result.recommendations,
+                "notes": result.notes,
+                "agent_name": result.agent_name
+            }
+        else:
+            return {
+                "success": False,
+                "error": result.data.get("error", "Error desconocido"),
+                "message": "No se pudo completar la revisión del listing",
+                "recommendations": result.recommendations,
+                "notes": result.notes
+            }
+            
+    except Exception as e:
+        logger.error(f"Error en revisión de listing: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error en revisión de listing: {str(e)}"
+        )
+
+@router.post("/comprehensive-review")
+async def comprehensive_review(
+    product_input: ProductInput,
+    request: Request,
+    db: AsyncSession = Depends(get_db)
+) -> Dict[str, Any]:
+    """
+    Realiza una revisión integral completa de un producto desde cero
+    """
+    try:
+        logger.info(f"Iniciando revisión integral para: {product_input.product_name}")
+        
+        # Primero crear el listing usando el orquestador
+        orchestrator = ListingOrchestrator()
+        listing = await orchestrator.create_listing(product_input)
+        
+        # Obtener respuestas de todos los agentes
+        agent_responses = await orchestrator.get_last_agent_responses()
+        
+        # Preparar datos para el agente revisor
+        review_data = {
+            "product_data": {
+                "product_name": product_input.product_name,
+                "category": product_input.category,
+                "features": product_input.competitive_advantages,
+                "use_cases": product_input.use_situations,
+                "description": product_input.value_proposition,
+                "target_audience": product_input.target_customer_description,
+                "price_range": f"${product_input.target_price}",
+                "raw_specifications": product_input.raw_specifications,
+                "target_keywords": product_input.target_keywords
+            },
+            "agent_results": {
+                "title_agent": {"title": listing.title},
+                "description_agent": {"description": listing.description},
+                "bullets_agent": {"bullet_points": listing.bullet_points},
+                "keywords_agent": {"keywords": listing.search_terms}
+            },
+            "original_listing": {
+                "title": listing.title,
+                "description": listing.description,
+                "bullet_points": listing.bullet_points,
+                "search_terms": listing.search_terms,
+                "backend_keywords": listing.backend_keywords,
+                "confidence_score": listing.confidence_score
+            }
+        }
+        
+        # Ejecutar el agente revisor
+        from ..agents.review_agent import ReviewAgent
+        review_agent = ReviewAgent()
+        review_result = await review_agent.process(review_data)
+        
+        # Limpiar recursos
+        await review_agent.cleanup()
+        
+        # Guardar en base de datos si es exitoso
+        if review_result.status == "success":
+            listing_service = ListingService(db)
+            
+            # Crear un listing mejorado basado en la revisión
+            final_proposal = review_result.data.get("final_listing", {})
+            
+            # Actualizar el listing original con las mejoras
+            improved_listing = listing
+            improved_listing.title = final_proposal.get("title", listing.title)
+            improved_listing.description = final_proposal.get("description", listing.description)
+            improved_listing.bullet_points = final_proposal.get("bullet_points", listing.bullet_points)
+            improved_listing.search_terms = final_proposal.get("keywords", listing.search_terms)
+            improved_listing.backend_keywords = final_proposal.get("backend_keywords", listing.backend_keywords)
+            improved_listing.confidence_score = review_result.confidence
+            
+            # Agregar notas de revisión
+            improved_listing.processing_notes.extend(review_result.notes)
+            improved_listing.recommendations.extend(review_result.recommendations)
+            
+            # Guardar el listing mejorado
+            db_listing = await listing_service.create_listing(
+                product_input, 
+                improved_listing, 
+                agent_responses
+            )
+            
+            # Preparar respuesta completa
+            return {
+                "success": True,
+                "original_listing": {
+                    "title": listing.title,
+                    "description": listing.description,
+                    "bullet_points": listing.bullet_points,
+                    "search_terms": listing.search_terms,
+                    "confidence_score": listing.confidence_score
+                },
+                "reviewed_listing": review_result.data,
+                "improvements_summary": review_result.data.get("improvements_summary", {}),
+                "quality_metrics": review_result.data.get("quality_metrics", {}),
+                "final_recommendations": review_result.data.get("final_recommendations", []),
+                "image_recommendations": review_result.data.get("image_recommendations", {}),
+                "database_id": db_listing.id,
+                "processing_time": review_result.processing_time,
+                "overall_confidence": review_result.confidence,
+                "agent_name": review_result.agent_name,
+                "review_metadata": review_result.data.get("review_metadata", {})
+            }
+        else:
+            return {
+                "success": False,
+                "error": review_result.data.get("error", "Error en revisión"),
+                "original_listing": {
+                    "title": listing.title,
+                    "description": listing.description,
+                    "bullet_points": listing.bullet_points,
+                    "search_terms": listing.search_terms,
+                    "confidence_score": listing.confidence_score
+                },
+                "recommendations": review_result.recommendations,
+                "notes": review_result.notes
+            }
+            
+    except Exception as e:
+        logger.error(f"Error en revisión integral: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error en revisión integral: {str(e)}"
+        )
+
+@router.post("/{listing_id}/enhance-description")
+async def enhance_description(
+    listing_id: int,
+    enhancement_data: Dict[str, Any],
+    db: AsyncSession = Depends(get_db)
+) -> Dict[str, Any]:
+    """
+    Mejora la descripción de un producto usando IA para hacerla más atractiva y detallada
+    """
+    try:
+        logger.info(f"Mejorando descripción para listing {listing_id}")
+        
+        listing_service = ListingService(db)
+        
+        # Obtener el listing existente
+        listing = await listing_service.get_listing(listing_id)
+        if not listing:
+            raise HTTPException(status_code=404, detail=LISTING_NOT_FOUND)
+        
+        # Extraer datos de la request
+        current_description = enhancement_data.get("current_description", "")
+        product_info = enhancement_data.get("product_info", {})
+        
+        if not current_description.strip():
+            raise HTTPException(status_code=400, detail="No hay descripción para mejorar")
+        
+        # Crear el prompt para mejorar la descripción
+        enhancement_prompt = f"""
+        Mejora la siguiente descripción de producto de Amazon para que sea más atractiva, detallada y persuasiva para los compradores:
+
+        PRODUCTO: {product_info.get('product_name', 'Producto')}
+        CATEGORÍA: {product_info.get('category', 'General')}
+        TÍTULO: {product_info.get('title', '')}
+        
+        DESCRIPCIÓN ACTUAL:
+        {current_description}
+
+        INSTRUCCIONES:
+        1. Haz la descripción más extensa y detallada
+        2. Incluye beneficios específicos para el comprador
+        3. Agrega hechos atractivos y características únicas
+        4. Usa un lenguaje persuasivo y emocional
+        5. Incluye casos de uso específicos
+        6. Mantén un tono profesional pero atractivo
+        7. Estructura el contenido para fácil lectura
+        8. Incluye elementos que generen confianza
+        9. Optimiza para conversiones en Amazon
+        10. Mantén la información veraz y relevante
+
+        FORMATO DE RESPUESTA:
+        Devuelve SOLO la descripción mejorada en formato JSON:
+        {{
+            "enhanced_description": "La descripción mejorada aquí..."
+        }}
+        """
+        
+        # Usar el servicio de Ollama para generar la descripción mejorada
+        ollama_service = get_ollama_service()
+        
+        logger.info(f"Enviando prompt a Ollama: {enhancement_prompt[:200]}...")
+        
+        enhanced_result = await ollama_service.generate_structured_response(
+            prompt=enhancement_prompt,
+            expected_format="json"
+        )
+        
+        logger.info(f"Respuesta de Ollama: {enhanced_result}")
+        
+        # Extraer la descripción mejorada de diferentes posibles formatos
+        enhanced_description = None
+        
+        if enhanced_result and enhanced_result.get("success"):
+            content = enhanced_result.get("content", "")
+            
+            # Si hay un error de parsing, intentar extraer manualmente
+            if enhanced_result.get("parse_error"):
+                logger.info("Error de parsing JSON, intentando extraer manualmente...")
+                
+                # Buscar el contenido de enhanced_description en el texto
+                import re
+                match = re.search(r'"enhanced_description"\s*:\s*"([^"]+(?:\\.[^"]*)*)"', content)
+                if match:
+                    enhanced_description = match.group(1)
+                    # Limpiar caracteres de escape
+                    enhanced_description = enhanced_description.replace('\\n', '\n').replace('\\"', '"').replace('\\\\', '\\')
+                    logger.info(f"Descripción extraída manualmente: {enhanced_description[:100]}...")
+            else:
+                # Si no hay error de parsing, usar la respuesta estructurada
+                if isinstance(content, dict) and content.get("enhanced_description"):
+                    enhanced_description = content["enhanced_description"]
+                elif isinstance(content, str):
+                    try:
+                        import json
+                        parsed_content = json.loads(content)
+                        enhanced_description = parsed_content.get("enhanced_description")
+                    except json.JSONDecodeError:
+                        logger.error("Error parsing JSON content")
+        
+        if enhanced_description and enhanced_description.strip():
+            # Actualizar la descripción en el listing
+            updated_data = {"description": enhanced_description}
+            await listing_service.update_listing(listing_id, updated_data)
+            
+            logger.info(f"Descripción mejorada exitosamente para listing {listing_id}")
+            
+            return {
+                "success": True,
+                "message": "Descripción mejorada exitosamente",
+                "enhanced_description": enhanced_description,
+                "original_description": current_description,
+                "improvement_metrics": {
+                    "original_length": len(current_description),
+                    "enhanced_length": len(enhanced_description),
+                    "improvement_ratio": len(enhanced_description) / len(current_description) if current_description else 0
+                },
+                "enhanced_at": datetime.now().isoformat()
+            }
+        else:
+            logger.error(f"No se pudo extraer descripción mejorada de: {enhanced_result}")
+            raise HTTPException(
+                status_code=500,
+                detail=f"No se pudo generar una descripción mejorada. Respuesta: {enhanced_result}"
+            )
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error mejorando descripción: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error interno al mejorar la descripción: {str(e)}"
         )

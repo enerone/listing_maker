@@ -31,7 +31,8 @@ class ContentAgent(BaseAgent):
 Tu trabajo es generar descripciones claras y convincentes de lo que incluye el producto.
 Te especializas en crear confianza mostrando el valor completo del paquete.
 Siempre devuelves respuestas en formato JSON válido.
-Eres claro, preciso y orientado a generar confianza en el comprador."""
+Eres claro, preciso y orientado a generar confianza en el comprador.
+IMPORTANTE: Todas las recomendaciones deben estar completamente en español, con un lenguaje claro y específico para el mercado hispanohablante."""
     
     async def process(self, product_input: ProductInput) -> AgentResponse:
         """

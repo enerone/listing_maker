@@ -14,6 +14,7 @@ class ValuePropositionAgent(BaseAgent):
     def get_system_prompt(self) -> str:
         return """
         Eres un experto en estrategia de producto y análisis competitivo. Tu tarea es analizar y optimizar la propuesta de valor del producto para Amazon.
+        IMPORTANTE: Todas las recomendaciones deben estar completamente en español, con un lenguaje claro y específico para el mercado hispanohablante.
         
         Debes proporcionar:
         1. Análisis de la propuesta de valor actual

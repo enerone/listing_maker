@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demo - Agente Revisor de Listings</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .demo-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .demo-header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+        }
+        
+        .demo-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .feature-highlight {
+            background: #f8f9fa;
+            border-left: 4px solid #007cba;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+        }
+        
+        .loading-spinner {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 5px;
+            color: white;
+            font-weight: 500;
+            z-index: 1000;
+            min-width: 300px;
+        }
+        
+        .notification.success {
+            background: #28a745;
+        }
+        
+        .notification.error {
+            background: #dc3545;
+        }
+        
+        .notification.info {
+            background: #17a2b8;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #007cba;
+        }
+        
+        .stat-label {
+            color: #666;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <div class="demo-header">
+            <h1>🤖 Agente Revisor de Listings</h1>
+            <p>Optimiza tus listings de Amazon con inteligencia artificial</p>
+        </div>
+
+        <div class="demo-section">
+            <h2>✨ Características del Agente Revisor</h2>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="feature-highlight">
+                        <h4>🎯 Optimización de Títulos</h4>
+                        <p>Mejora los títulos para aumentar la visibilidad y las conversiones</p>
+                    </div>
+                    <div class="feature-highlight">
+                        <h4>📝 Mejora de Descripciones</h4>
+                        <p>Optimiza las descripciones para ser más persuasivas y claras</p>
+                    </div>
+                    <div class="feature-highlight">
+                        <h4>🎯 Bullet Points Efectivos</h4>
+                        <p>Crea bullet points que destaquen beneficios únicos</p>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="feature-highlight">
+                        <h4>🏷️ Categorización Precisa</h4>
+                        <p>Sugiere las categorías más apropiadas para tu producto</p>
+                    </div>
+                    <div class="feature-highlight">
+                        <h4>🔍 Optimización SEO</h4>
+                        <p>Mejora las palabras clave para mejor posicionamiento</p>
+                    </div>
+                    <div class="feature-highlight">
+                        <h4>📸 Recomendaciones de Imágenes</h4>
+                        <p>Busca y sugiere imágenes relevantes para tu producto</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h2>🧪 Prueba el Agente Revisor</h2>
+            <form id="demo-form" class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="product_name" class="form-label">Nombre del Producto *</label>
+                        <input type="text" class="form-control" id="product_name" name="product_name" 
+                               value="Smartwatch Pro X1" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="category" class="form-label">Categoría</label>
+                        <select class="form-control" id="category" name="category">
+                            <option value="Electronics">Electronics</option>
+                            <option value="Sports & Outdoors">Sports & Outdoors</option>
+                            <option value="Home & Kitchen">Home & Kitchen</option>
+                            <option value="Beauty & Personal Care">Beauty & Personal Care</option>
+                            <option value="Clothing, Shoes & Jewelry">Clothing, Shoes & Jewelry</option>
+                            <option value="Toys & Games">Toys & Games</option>
+                            <option value="Books">Books</option>
+                            <option value="Automotive">Automotive</option>
+                            <option value="Tools & Home Improvement">Tools & Home Improvement</option>
+                            <option value="Health & Household">Health & Household</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="target_price" class="form-label">Precio Objetivo ($)</label>
+                        <input type="number" class="form-control" id="target_price" name="target_price" 
+                               value="199.99" step="0.01">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="target_customer_description" class="form-label">Cliente Objetivo</label>
+                        <textarea class="form-control" id="target_customer_description" name="target_customer_description" 
+                                  rows="3">Atletas y entusiastas del fitness que buscan un dispositivo confiable para monitorear su rendimiento</textarea>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="value_proposition" class="form-label">Propuesta de Valor</label>
+                        <textarea class="form-control" id="value_proposition" name="value_proposition" 
+                                  rows="3">Smartwatch avanzado con GPS, monitor de frecuencia cardíaca y resistencia al agua para deportistas profesionales</textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="competitive_advantages" class="form-label">Ventajas Competitivas (una por línea)</label>
+                        <textarea class="form-control" id="competitive_advantages" name="competitive_advantages" 
+                                  rows="4">GPS de alta precisión
+Monitor de frecuencia cardíaca 24/7
+Resistente al agua hasta 50m
+Batería de larga duración (7 días)</textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="use_situations" class="form-label">Situaciones de Uso (una por línea)</label>
+                        <textarea class="form-control" id="use_situations" name="use_situations" 
+                                  rows="3">Correr y hacer jogging
+Natación y deportes acuáticos
+Entrenamiento en el gimnasio
+Monitoreo diario de salud</textarea>
+                    </div>
+                </div>
+                
+                <div class="col-12">
+                    <div class="form-group">
+                        <label for="raw_specifications" class="form-label">Especificaciones Técnicas</label>
+                        <textarea class="form-control" id="raw_specifications" name="raw_specifications" 
+                                  rows="3">Pantalla AMOLED de 1.4 pulgadas, Bluetooth 5.0, WiFi, GPS/GLONASS, Sensor de frecuencia cardíaca, Acelerómetro, Giroscopio, Resistencia al agua 5ATM, Batería de 300mAh</textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="target_keywords" class="form-label">Palabras Clave Objetivo (separadas por comas)</label>
+                        <input type="text" class="form-control" id="target_keywords" name="target_keywords" 
+                               value="smartwatch, fitness tracker, GPS watch, waterproof, heart rate monitor, sports watch">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="box_content_description" class="form-label">Contenido de la Caja</label>
+                        <textarea class="form-control" id="box_content_description" name="box_content_description" 
+                                  rows="2">Smartwatch Pro X1, Cable de carga magnético, Manual de usuario, Tarjeta de garantía</textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="warranty_info" class="form-label">Información de Garantía</label>
+                        <input type="text" class="form-control" id="warranty_info" name="warranty_info" 
+                               value="Garantía limitada de 2 años del fabricante">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="pricing_strategy_notes" class="form-label">Notas de Estrategia de Precios</label>
+                        <textarea class="form-control" id="pricing_strategy_notes" name="pricing_strategy_notes" 
+                                  rows="2">Precio competitivo comparado con Apple Watch y Samsung Galaxy Watch, enfocado en mercado fitness premium</textarea>
+                    </div>
+                </div>
+                
+                <div class="col-12 text-center">
+                    <button type="button" class="btn btn-primary btn-lg" onclick="startComprehensiveReview()">
+                        🔍 Revisar con Agente IA
+                    </button>
+                    <button type="button" class="btn btn-secondary btn-lg ms-2" onclick="fillSampleData()">
+                        📝 Datos de Ejemplo
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div class="loading-spinner" id="loading-spinner">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Cargando...</span>
+            </div>
+            <p class="mt-2">Procesando con IA... Esto puede tomar unos momentos.</p>
+        </div>
+
+        <div id="review-results"></div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="config.js"></script>
+    <script src="review-agent.js"></script>
+    <script>
+        // Funciones específicas para esta demo
+        
+        function showLoading(message = 'Cargando...') {
+            const spinner = document.getElementById('loading-spinner');
+            const text = spinner.querySelector('p');
+            if (text) text.textContent = message;
+            spinner.style.display = 'block';
+        }
+        
+        function hideLoading() {
+            document.getElementById('loading-spinner').style.display = 'none';
+        }
+        
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 5000);
+        }
+        
+        async function startComprehensiveReview() {
+            try {
+                const form = document.getElementById('demo-form');
+                const formData = new FormData(form);
+                
+                // Convertir FormData a objeto
+                const productData = {};
+                for (let [key, value] of formData.entries()) {
+                    if (key === 'competitive_advantages' || key === 'use_situations') {
+                        productData[key] = value.split('\n').filter(item => item.trim());
+                    } else if (key === 'target_keywords') {
+                        productData[key] = value.split(',').map(item => item.trim());
+                    } else if (key === 'target_price') {
+                        productData[key] = parseFloat(value) || 0;
+                    } else {
+                        productData[key] = value;
+                    }
+                }
+                
+                // Ejecutar revisión integral
+                const result = await comprehensiveReview(productData);
+                
+                if (result.success) {
+                    displayReviewResults(result);
+                    showNotification('¡Revisión completada exitosamente!', 'success');
+                    
+                    // Scroll to results
+                    document.getElementById('review-results').scrollIntoView({ 
+                        behavior: 'smooth' 
+                    });
+                } else {
+                    showNotification(`Error en la revisión: ${result.error}`, 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showNotification(`Error al revisar: ${error.message}`, 'error');
+            }
+        }
+        
+        function fillSampleData() {
+            // Los datos de ejemplo ya están precargados en el formulario
+            showNotification('Datos de ejemplo cargados', 'info');
+        }
+        
+        // Mostrar estadísticas del agente (simuladas)
+        function displayStats() {
+            const statsHTML = `
+                <div class="demo-section">
+                    <h2>📊 Estadísticas del Agente Revisor</h2>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-number">95%</div>
+                            <div class="stat-label">Precisión en Categorización</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number">40%</div>
+                            <div class="stat-label">Mejora Promedio en Títulos</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number">60%</div>
+                            <div class="stat-label">Optimización de Keywords</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number">8.5/10</div>
+                            <div class="stat-label">Puntuación de Calidad</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.querySelector('.demo-container').insertAdjacentHTML('beforeend', statsHTML);
+        }
+        
+        // Inicializar demo
+        document.addEventListener('DOMContentLoaded', function() {
+            displayStats();
+            showNotification('Demo del Agente Revisor cargada correctamente', 'success');
+        });
+    </script>
+</body>
+</html>

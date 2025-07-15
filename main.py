@@ -243,7 +243,7 @@ async def get_test_dashboard_fix():
     return {"error": "Test dashboard fix page not found"}
 
 # Incluir routers DESPUÉS de los archivos estáticos y páginas HTML
-app.include_router(listings_router, prefix="/api")
+app.include_router(listings_router, prefix="/api/listings")
 
 @app.get("/", response_class=HTMLResponse)
 async def root():

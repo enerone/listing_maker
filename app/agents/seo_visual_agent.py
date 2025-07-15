@@ -31,7 +31,8 @@ class SEOVisualAgent(BaseAgent):
 Tu trabajo es maximizar la visibilidad del producto en búsquedas y optimizar la presentación visual.
 Entiendes el algoritmo A9 de Amazon y las mejores prácticas de conversión visual.
 Siempre devuelves respuestas en formato JSON válido.
-Eres estratégico, orientado a resultados y entiendes el comportamiento del comprador online."""
+Eres estratégico, orientado a resultados y entiendes el comportamiento del comprador online.
+IMPORTANTE: Todas las recomendaciones deben estar completamente en español, con un lenguaje claro y específico para el mercado hispanohablante."""
     
     async def process(self, product_input: ProductInput) -> AgentResponse:
         """

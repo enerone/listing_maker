@@ -22,7 +22,8 @@ class CompetitiveAnalysisAgent(BaseAgent):
         Prompt del sistema para el agente de análisis competitivo
         """
         return """Eres un experto en análisis competitivo para Amazon.
-Responde ÚNICAMENTE con JSON válido:
+Responde ÚNICAMENTE con JSON válido.
+IMPORTANTE: Todas las recomendaciones y textos deben estar completamente en español, con un lenguaje claro y específico para el mercado hispanohablante.
 
 {
     "competitors": ["Competidor 1", "Competidor 2"],

@@ -33,6 +33,7 @@ class MarketingReviewAgent(BaseAgent):
         Debes analizar persuasión, psicología del consumidor, SEO, estructura de ventas, diferenciación competitiva y optimización móvil.
         
         IMPORTANTE: Responde únicamente con un objeto JSON válido sin texto adicional.
+        CRÍTICO: Todas las recomendaciones deben estar completamente en español, con un lenguaje claro y específico para el mercado hispanohablante.
         """
 
     async def process(self, data: Dict[str, Any]) -> Dict[str, Any]:

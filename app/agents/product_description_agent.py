@@ -31,7 +31,8 @@ class ProductDescriptionAgent(BaseAgent):
 Tu trabajo es generar descripciones largas, atractivas y persuasivas que conviertan navegadores en compradores.
 Te especializas en storytelling de productos, beneficios emocionales y llamadas a la acción.
 Siempre devuelves respuestas en formato JSON válido.
-Eres creativo, persuasivo y enfocado en la conversión."""
+Eres creativo, persuasivo y enfocado en la conversión.
+IMPORTANTE: Todas las recomendaciones deben estar completamente en español, con un lenguaje claro y específico para el mercado hispanohablante."""
     
     async def process(self, product_input: ProductInput) -> AgentResponse:
         """

@@ -15,7 +15,7 @@ def test_box_content_duplication():
     
     try:
         # Create the listing
-        response = requests.post("http://localhost:8000/api/listings", json=test_listing)
+        response = requests.post("http://localhost:8000/api/listings/create", json=test_listing)
         if response.status_code == 201:
             listing_id = response.json()["id"]
             print(f"✅ Created test listing with ID: {listing_id}")

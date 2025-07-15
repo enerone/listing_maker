@@ -98,32 +98,43 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Setup event listeners
 function setupEventListeners() {
+    console.log('🔧 Setting up event listeners...');
+    
     try {
         const searchInput = document.getElementById('searchInput');
         const categoryFilter = document.getElementById('categoryFilter');
         const statusFilter = document.getElementById('statusFilter');
         
+        console.log('🔍 DOM elements found:', {
+            searchInput: !!searchInput,
+            categoryFilter: !!categoryFilter,
+            statusFilter: !!statusFilter
+        });
+        
         if (searchInput) {
             searchInput.addEventListener('input', debounce(filterListings, 300));
+            console.log('✅ Search input listener added');
         } else {
-            console.warn('searchInput element not found');
+            console.warn('❌ searchInput element not found');
         }
         
         if (categoryFilter) {
             categoryFilter.addEventListener('change', filterListings);
+            console.log('✅ Category filter listener added');
         } else {
-            console.warn('categoryFilter element not found');
+            console.warn('❌ categoryFilter element not found');
         }
         
         if (statusFilter) {
             statusFilter.addEventListener('change', filterListings);
+            console.log('✅ Status filter listener added');
         } else {
-            console.warn('statusFilter element not found');
+            console.warn('❌ statusFilter element not found');
         }
         
-        console.log('Event listeners setup complete');
+        console.log('✅ Event listeners setup complete');
     } catch (error) {
-        console.error('Error setting up event listeners:', error);
+        console.error('❌ Error setting up event listeners:', error);
     }
 }
 
@@ -198,8 +209,10 @@ async function loadListings() {
         console.log('🔄 Processing listings...');
         allListings = (data.listings || data || []).map(listing => ({
             ...listing,
-            // Clean up category format
-            category: listing.category ? listing.category.replace('ProductCategory.', '') : 'Sin categoría',
+            // Clean up category format and convert to proper format
+            category: listing.category ? 
+                formatCategoryName(listing.category.replace('ProductCategory.', '')) : 
+                'Sin categoría',
             // Ensure confidence_score is a number
             confidence_score: Number(listing.confidence_score || 0),
             // Ensure price is properly formatted (use target_price from API)
@@ -212,14 +225,25 @@ async function loadListings() {
             filteredListingsLength: filteredListings.length,
             firstListing: allListings[0] ? {
                 id: allListings[0].id,
-                name: allListings[0].product_name
+                name: allListings[0].product_name,
+                category: allListings[0].category,
+                status: allListings[0].status
             } : null
         });
+        
+        // Debug: Log all unique categories and statuses
+        if (allListings.length > 0) {
+            const uniqueCategories = [...new Set(allListings.map(l => l.category))];
+            const uniqueStatuses = [...new Set(allListings.map(l => l.status))];
+            console.log('🏷️ Available categories:', uniqueCategories);
+            console.log('🏷️ Available statuses:', uniqueStatuses);
+        }
         
         console.log('🔄 Updating stats...');
         // Add a small delay to ensure DOM is fully ready
         setTimeout(() => {
             updateStats();
+            populateFilterOptions();
         }, 10);
         
         console.log('🔄 Rendering listings...');
@@ -569,6 +593,8 @@ function generateListingCard(listing) {
 
 // Filter listings based on search and filters
 function filterListings() {
+    console.log('🔍 filterListings called');
+    
     const searchInput = document.getElementById('searchInput');
     const categoryFilter = document.getElementById('categoryFilter');
     const statusFilter = document.getElementById('statusFilter');
@@ -576,6 +602,18 @@ function filterListings() {
     const searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
     const categoryValue = categoryFilter ? categoryFilter.value : '';
     const statusValue = statusFilter ? statusFilter.value : '';
+    
+    console.log('Filter values:', { searchTerm, categoryValue, statusValue });
+    console.log('Total listings before filter:', allListings.length);
+    
+    // Log some sample listings for debugging
+    if (allListings.length > 0) {
+        console.log('Sample listing data:', {
+            first: allListings[0],
+            categories: [...new Set(allListings.map(l => l.category))],
+            statuses: [...new Set(allListings.map(l => l.status))]
+        });
+    }
     
     filteredListings = allListings.filter(listing => {
         const matchesSearch = !searchTerm || 
@@ -586,8 +624,15 @@ function filterListings() {
         const matchesCategory = !categoryValue || listing.category === categoryValue;
         const matchesStatus = !statusValue || listing.status === statusValue;
         
+        // Log individual matches for debugging
+        if (searchTerm || categoryValue || statusValue) {
+            console.log(`Listing ${listing.id}: search=${matchesSearch}, category=${matchesCategory}, status=${matchesStatus}`);
+        }
+        
         return matchesSearch && matchesCategory && matchesStatus;
     });
+    
+    console.log('Filtered listings count:', filteredListings.length);
     
     renderListings();
 }
@@ -628,6 +673,77 @@ async function deleteListing(listingId) {
         console.error('Error deleting listing:', error);
         showToast(`Error al eliminar listing: ${error.message}`, 'error');
     }
+}
+
+// Populate filter options dynamically
+function populateFilterOptions() {
+    console.log('🔄 Populating filter options...');
+    
+    const categoryFilter = document.getElementById('categoryFilter');
+    const statusFilter = document.getElementById('statusFilter');
+    
+    if (allListings.length > 0) {
+        // Get unique categories from actual data
+        const uniqueCategories = [...new Set(allListings.map(l => l.category))].filter(c => c && c !== 'Sin categoría');
+        const uniqueStatuses = [...new Set(allListings.map(l => l.status))].filter(s => s);
+        
+        console.log('📊 Unique categories from data:', uniqueCategories);
+        console.log('📊 Unique statuses from data:', uniqueStatuses);
+        
+        // Update category filter
+        if (categoryFilter) {
+            // Keep the "All categories" option
+            const allCategoriesOption = categoryFilter.querySelector('option[value=""]');
+            categoryFilter.innerHTML = '';
+            categoryFilter.appendChild(allCategoriesOption);
+            
+            // Add actual categories
+            uniqueCategories.forEach(category => {
+                const option = document.createElement('option');
+                option.value = category;
+                option.textContent = category;
+                categoryFilter.appendChild(option);
+            });
+        }
+        
+        // Update status filter
+        if (statusFilter) {
+            // Keep the "All statuses" option
+            const allStatusesOption = statusFilter.querySelector('option[value=""]');
+            statusFilter.innerHTML = '';
+            statusFilter.appendChild(allStatusesOption);
+            
+            // Add actual statuses with Spanish labels
+            const statusLabels = {
+                'draft': 'Borrador',
+                'published': 'Publicado',
+                'archived': 'Archivado'
+            };
+            
+            uniqueStatuses.forEach(status => {
+                const option = document.createElement('option');
+                option.value = status;
+                option.textContent = statusLabels[status] || status;
+                statusFilter.appendChild(option);
+            });
+        }
+    }
+}
+
+// Format category name from backend to display format
+function formatCategoryName(category) {
+    const categoryMap = {
+        'ELECTRONICS': 'Electronics',
+        'SPORTS': 'Sports & Outdoors',
+        'HOME_GARDEN': 'Home & Garden',
+        'HEALTH': 'Health & Personal Care',
+        'CLOTHING': 'Clothing, Shoes & Jewelry',
+        'AUTOMOTIVE': 'Automotive',
+        'TOYS': 'Toys & Games',
+        'BOOKS': 'Books'
+    };
+    
+    return categoryMap[category] || category;
 }
 
 // Utility functions

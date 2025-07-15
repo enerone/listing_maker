@@ -1,5 +1,7 @@
 // Configuration
-const API_BASE_URL = 'http://localhost:8000';
+// Usar configuración dinámica de API base URL
+const API_BASE_URL = window.Config ? window.Config.getApiBaseUrl() : 
+    `${window.location.protocol}//${window.location.hostname}:8000`;
 
 // Global variables
 let currentListing = null;

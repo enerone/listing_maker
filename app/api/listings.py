@@ -1,17 +1,100 @@
-from fastapi import APIRouter, HTTPException, Depends, Query
+from fastapi import APIRouter, HTTPException, Depends, Query, Request
 from typing import Dict, Any, List, Optional
 import logging
 from datetime import datetime
 from sqlalchemy.ext.asyncio import AsyncSession
-from datetime import datetime
 
 from ..models import ProductInput, ProcessedListing
 from ..agents.listing_orchestrator import ListingOrchestrator
 from ..database import get_db
 from ..services.listing_service import ListingService
-from ..models.database_models import Listing
+from ..services.recommendation_service import RecommendationService
 
 logger = logging.getLogger(__name__)
+
+def get_base_url(request: Request) -> str:
+    """
+    Genera la URL base dinámicamente basada en la request
+    """
+    scheme = request.url.scheme
+    host = request.url.hostname
+    port = request.url.port
+    
+    logger.info(f"Generando URL base - scheme: {scheme}, host: {host}, port: {port}")
+    
+    if port and port not in [80, 443]:
+        base_url = f"{scheme}://{host}:{port}"
+    else:
+        base_url = f"{scheme}://{host}"
+    
+    logger.info(f"URL base generada: {base_url}")
+    return base_url
+
+def get_image_url(request: Request, filename: str) -> str:
+    """
+    Genera la URL de imagen dinámicamente
+    """
+    base_url = get_base_url(request)
+    image_url = f"{base_url}/downloaded_images/{filename}"
+    logger.info(f"URL de imagen generada: {image_url}")
+    return image_url
+
+def _generate_category_specific_suggestions(category: str, product_name: str) -> Dict[str, Any]:
+    """Genera sugerencias específicas según la categoría del producto"""
+    category_lower = category.lower()
+    
+    if "electronics" in category_lower:
+        return {
+            "keywords": ["technology", "digital", "smart", "wireless"],
+            "features": [f"Advanced {product_name} with cutting-edge technology", "High-performance components", "Energy-efficient design"],
+            "target_audience": "Tech enthusiasts and professionals",
+            "marketing_angles": ["Innovation", "Performance", "User-Friendly"],
+            "dimensions": "Compact: 15cm x 10cm x 3cm",
+            "weight": "250g - Ultra-lightweight",
+            "materials": "Premium aluminum and high-grade plastics",
+            "colors": ["Black", "Silver", "Blue", "White"],
+            "box_contents": [f"{product_name} x1", "USB-C cable", "User manual", "Warranty card"],
+            "use_cases": ["Professional work", "Gaming", "Entertainment", "Travel"],
+            "main_competitor": "Apple, Samsung, Sony",
+            "brand": "TechPro",
+            "compatibility": "iOS, Android, Windows compatible"
+        }
+    elif "sports" in category_lower:
+        return {
+            "keywords": ["athletic", "performance", "training", "fitness"],
+            "features": [f"Professional {product_name} for athletes", "Weather-resistant construction", "Ergonomic design"],
+            "target_audience": "Athletes and fitness enthusiasts",
+            "marketing_angles": ["Performance", "Durability", "Comfort"],
+            "dimensions": "Ergonomic fit: One size fits most",
+            "weight": "Lightweight: 180g",
+            "materials": "Moisture-wicking fabric, reinforced stitching",
+            "colors": ["Black", "Red", "Blue", "Gray"],
+            "box_contents": [f"{product_name} x1", "Mesh bag", "Care instructions"],
+            "use_cases": ["Gym workouts", "Running", "Outdoor sports", "Training"],
+            "main_competitor": "Nike, Adidas, Under Armour",
+            "brand": "SportsPro",
+            "compatibility": "All fitness levels"
+        }
+    else:
+        return {
+            "keywords": ["quality", "reliable", "essential"],
+            "features": [f"Premium {product_name}", "Durable construction", "Easy to use"],
+            "target_audience": "General consumers",
+            "marketing_angles": ["Quality", "Reliability", "Value"],
+            "dimensions": "Standard size",
+            "weight": "Lightweight",
+            "materials": "High-quality materials",
+            "colors": ["Black", "White"],
+            "box_contents": [f"{product_name} x1", "Manual", "Warranty"],
+            "use_cases": ["Daily use", "Professional use"],
+            "main_competitor": "Leading brands",
+            "brand": "Premium Brand",
+            "compatibility": "Universal"
+        }
+
+# Constantes para mensajes
+LISTING_NOT_FOUND = "Listing no encontrado"
+INTERNAL_SERVER_ERROR = "Error interno del servidor"
 
 router = APIRouter(prefix="/listings", tags=["listings"])
 
@@ -50,7 +133,7 @@ async def create_listing(
             )
             
             # Agregar ID de base de datos al response
-            listing.database_id = db_listing.id
+            listing.database_id = int(db_listing.id)
             logger.info(f"Listing guardado en BD con ID: {db_listing.id}")
         
         logger.info(f"Listing creado exitosamente con confidence score: {listing.confidence_score}")
@@ -112,7 +195,7 @@ async def create_listing_simple(
             )
             
             # Agregar ID de base de datos al response
-            listing.database_id = db_listing.id
+            listing.database_id = int(db_listing.id)
             logger.info(f"Listing guardado en BD con ID: {db_listing.id}")
         
         logger.info(f"Listing creado exitosamente con confidence score: {listing.confidence_score}")
@@ -258,6 +341,166 @@ async def health_check():
             "ollama_service": "error"
         }
 
+@router.post("/suggestions")
+async def get_listing_suggestions(
+    product_data: Dict[str, Any]
+) -> Dict[str, Any]:
+    """
+    Genera sugerencias de IA para un producto sin crear un listing completo
+    Endpoint esperado por el frontend para obtener sugerencias automáticas
+    """
+    try:
+        logger.info(f"Generando sugerencias para: {product_data.get('product_name', 'Unknown')}")
+        
+        # Extraer información del producto
+        product_name = product_data.get('product_name', '')
+        category = product_data.get('category', 'Other')
+        features = product_data.get('features', [])
+        target_price = product_data.get('target_price', 0)
+        
+        # Generar sugerencias específicas basadas en la categoría
+        category_suggestions = _generate_category_specific_suggestions(category, product_name)
+        
+        # Generar sugerencias completas basadas en la información del producto
+        suggestions = {
+            "category": category,
+            "keywords": [
+                product_name.lower().replace(' ', '-'),
+                "high-quality",
+                "durable",
+                "premium"
+            ] + category_suggestions.get("keywords", []),
+            "features": features if features else category_suggestions.get("features", [
+                f"Premium {product_name} with advanced features",
+                "High-quality materials and construction",
+                "Easy to use and reliable performance"
+            ]),
+            "target_audience": category_suggestions.get("target_audience", "General consumers looking for quality products"),
+            "price_recommendations": {
+                "suggested_price": max(target_price, 29.99),
+                "competitor_range": f"${max(target_price-10, 19.99):.2f} - ${target_price+20:.2f}"
+            },
+            "price_range": {
+                "suggested": max(target_price, 29.99)
+            },
+            "marketing_angles": [
+                "Premium Quality",
+                "Value for Money", 
+                "Easy to Use",
+                "Reliable Performance"
+            ] + category_suggestions.get("marketing_angles", []),
+            # Nuevos campos específicos para el frontend
+            "dimensions": category_suggestions.get("dimensions", "Standard size"),
+            "weight": category_suggestions.get("weight", "Lightweight design"),
+            "materials": category_suggestions.get("materials", "Premium materials"),
+            "colors": category_suggestions.get("colors", ["Black", "White"]),
+            "box_contents": category_suggestions.get("box_contents", [
+                f"{product_name} x1",
+                "User manual",
+                "Warranty card"
+            ]),
+            "use_cases": category_suggestions.get("use_cases", [
+                "Daily use",
+                "Professional applications",
+                "Gift giving"
+            ]),
+            "main_competitor": category_suggestions.get("main_competitor", "Leading brand in category"),
+            "brand": category_suggestions.get("brand", "Premium Brand"),
+            "compatibility": category_suggestions.get("compatibility", "Universal compatibility")
+        }
+        
+        return {
+            "success": True,
+            "suggestions": suggestions,
+            "product_name": product_name,
+            "generated_at": datetime.now().isoformat()
+        }
+        
+    except Exception as e:
+        logger.error(f"Error generando sugerencias: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error generando sugerencias: {str(e)}"
+        )
+
+@router.post("/search-images")
+async def search_product_images(
+    search_data: Dict[str, Any],
+    request: Request
+) -> Dict[str, Any]:
+    """
+    Busca imágenes relevantes para un producto específico usando el agente mejorado
+    """
+    try:
+        logger.info(f"Buscando imágenes relevantes para: {search_data.get('product_name', 'Unknown')}")
+        
+        # Importar el agente de búsqueda real
+        from ..agents.real_image_search_agent import RealImageSearchAgent
+        
+        # Crear datos estructurados para el agente
+        agent_data = {
+            "product_data": {
+                "product_name": search_data.get("product_name", ""),
+                "category": search_data.get("category", "Other"),
+                "features": search_data.get("features", []),
+                "use_cases": search_data.get("use_cases", []),
+                "description": search_data.get("description", ""),
+                "target_audience": search_data.get("target_audience", "General"),
+                "price_range": search_data.get("price_range", "$0-100")
+            },
+            "previous_results": {}
+        }
+        
+        # Ejecutar el agente de búsqueda real
+        image_agent = RealImageSearchAgent()
+        result = await image_agent.process(agent_data)
+        
+        # Limpiar recursos del agente
+        await image_agent.cleanup()
+        
+        if result.status == "success":
+            # Transform image data to include accessible URLs with dynamic base URL
+            images_data = result.data.get("downloaded_images", [])
+            accessible_images = []
+            
+            for img in images_data:
+                accessible_images.append({
+                    "url": get_image_url(request, img.get('filename', '')),
+                    "thumbnail_url": get_image_url(request, img.get('thumbnail_filename', img.get('filename', ''))),
+                    "filename": img.get("filename", ""),
+                    "description": img.get("description", ""),
+                    "search_term": img.get("search_term", ""),
+                    "relevance_score": img.get("relevance_score", 0.0),
+                    "size": img.get("size", 0),
+                    "status": img.get("status", "downloaded")
+                })
+            
+            return {
+                "success": True,
+                "product_type": result.data.get("product_type_detected", "Unknown"),
+                "images": accessible_images,
+                "image_categories": result.data.get("image_categories", {}),
+                "total_images": len(accessible_images),
+                "search_terms_used": result.data.get("search_terms_used", []),
+                "recommendations": result.recommendations,
+                "confidence": result.confidence,
+                "processing_time": result.processing_time,
+                "notes": result.notes
+            }
+        else:
+            return {
+                "success": False,
+                "error": result.data.get("error", "Error desconocido"),
+                "message": "No se pudieron obtener imágenes relevantes"
+            }
+            
+    except Exception as e:
+        logger.error(f"Error buscando imágenes: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error buscando imágenes: {str(e)}"
+        )
+
 @router.get("/metrics")
 async def get_metrics(db: AsyncSession = Depends(get_db)):
     """
@@ -290,79 +533,6 @@ async def get_metrics(db: AsyncSession = Depends(get_db)):
         logger.error(f"Error getting metrics: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error obteniendo métricas: {str(e)}")
 
-@router.get("/{listing_id}")
-async def get_listing_detail(
-    listing_id: int, 
-    db: AsyncSession = Depends(get_db)
-) -> Dict[str, Any]:
-    """
-    Obtiene detalles completos de un listing específico
-    """
-    try:
-        listing_service = ListingService(db)
-        listing = await listing_service.get_listing(listing_id)
-        
-        if not listing:
-            raise HTTPException(status_code=404, detail="Listing no encontrado")
-        
-        return {
-            "listing": {
-                "id": listing.id,
-                "product_name": listing.product_name,
-                "category": listing.category,
-                "target_price": listing.target_price,
-                "title": listing.title,
-                "bullet_points": listing.bullet_points,
-                "description": listing.description,
-                "search_terms": listing.search_terms,
-                "backend_keywords": listing.backend_keywords,
-                "images_order": listing.images_order,
-                "a_plus_content": listing.a_plus_content,
-                "confidence_score": listing.confidence_score,
-                "processing_notes": listing.processing_notes,
-                "recommendations": listing.recommendations,
-                "status": listing.status,
-                "version": listing.version,
-                "created_at": listing.created_at,
-                "updated_at": listing.updated_at,
-                "input_data": listing.input_data
-            },
-            "agent_results": [
-                {
-                    "id": ar.id,
-                    "agent_name": ar.agent_name,
-                    "status": ar.status,
-                    "confidence": ar.confidence,
-                    "processing_time": ar.processing_time,
-                    "agent_data": ar.agent_data,
-                    "notes": ar.notes,
-                    "recommendations": ar.recommendations,
-                    "created_at": ar.created_at
-                }
-                for ar in listing.agent_results
-            ],
-            "versions": [
-                {
-                    "id": v.id,
-                    "version_number": v.version_number,
-                    "title": v.title,
-                    "confidence_score": v.confidence_score,
-                    "change_reason": v.change_reason,
-                    "created_at": v.created_at
-                }
-                for v in listing.listing_versions
-            ]
-        }
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error obteniendo listing {listing_id}: {str(e)}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error obteniendo listing: {str(e)}"
-        )
-
 @router.put("/{listing_id}")
 async def update_listing(
     listing_id: int,
@@ -382,7 +552,7 @@ async def update_listing(
         )
         
         if not updated_listing:
-            raise HTTPException(status_code=404, detail="Listing no encontrado")
+            raise HTTPException(status_code=404, detail=LISTING_NOT_FOUND)
         
         return {
             "message": "Listing actualizado exitosamente",
@@ -412,7 +582,7 @@ async def delete_listing(
         success = await listing_service.delete_listing(listing_id)
         
         if not success:
-            raise HTTPException(status_code=404, detail="Listing no encontrado")
+            raise HTTPException(status_code=404, detail=LISTING_NOT_FOUND)
         
         return {"message": "Listing archivado exitosamente"}
         
@@ -438,7 +608,7 @@ async def publish_listing(
         published_listing = await listing_service.publish_listing(listing_id)
         
         if not published_listing:
-            raise HTTPException(status_code=404, detail="Listing no encontrado")
+            raise HTTPException(status_code=404, detail=LISTING_NOT_FOUND)
         
         return {
             "message": "Listing publicado exitosamente",
@@ -504,14 +674,15 @@ async def apply_recommendation(
         # Obtener el listing existente
         listing = await listing_service.get_listing(listing_id)
         if not listing:
-            raise HTTPException(status_code=404, detail="Listing no encontrado")
+            raise HTTPException(status_code=404, detail=LISTING_NOT_FOUND)
         
         # Extraer datos de la recomendación
         agent_name = recommendation_data.get("agent_name", "")
         recommendation_text = recommendation_data.get("recommendation_text", "")
         
-        # Aplicar la recomendación basada en el agente y tipo
-        updated_listing = _apply_recommendation_logic(
+        # Aplicar la recomendación usando servicio refactorizado
+        recommendation_service = RecommendationService()
+        updated_listing = await recommendation_service.apply_recommendation_with_llm(
             listing, agent_name, recommendation_text
         )
         
@@ -548,65 +719,230 @@ async def apply_recommendation(
         raise HTTPException(status_code=500, detail=f"Error aplicando recomendación: {str(e)}")
 
 
-def _apply_recommendation_logic(
-    listing: Listing, 
-    agent_name: str, 
-    recommendation_text: str
-) -> Optional[Dict[str, Any]]:
+@router.get("/{listing_id}/images")
+async def get_listing_images(
+    listing_id: int, 
+    db: AsyncSession = Depends(get_db)
+) -> Dict[str, Any]:
     """
-    Lógica básica para aplicar recomendaciones simples
+    Obtiene las imágenes asociadas a un listing específico
     """
-    updated_fields = {}
-    recommendation_lower = recommendation_text.lower()
-    
-    logger.info(f"Aplicando recomendación: {recommendation_text}")
-    
     try:
-        # Recomendación de título con marca
-        if "brand name" in recommendation_lower or "discoverability" in recommendation_lower:
-            current_title = str(listing.title or listing.product_name or "")
-            if "TechPro" not in current_title and current_title:
-                updated_fields["title"] = f"TechPro {current_title}"
+        listing_service = ListingService(db)
+        listing = await listing_service.get_listing(listing_id)
         
-        # Recomendación de precio
-        elif "price" in recommendation_lower and "adjust" in recommendation_lower:
-            try:
-                current_price = float(listing.target_price or 0)
-                if current_price > 0:
-                    updated_fields["target_price"] = round(current_price * 1.05, 2)
-            except (ValueError, TypeError):
-                pass
+        if not listing:
+            raise HTTPException(status_code=404, detail=LISTING_NOT_FOUND)
         
-        # Recomendación de descripción
-        elif "description" in recommendation_lower or "expand" in recommendation_lower:
-            current_desc = str(listing.description or "")
-            if len(current_desc) < 500:
-                addition = "\n\n✅ Calidad premium garantizada\n🚚 Envío rápido incluido\n💯 Satisfacción garantizada"
-                updated_fields["description"] = current_desc + addition
+        # Buscar resultados del ImageSearchAgent
+        image_agent_result = None
+        for agent_result in listing.agent_results:
+            if agent_result.agent_name == "ImageSearchAgent":
+                image_agent_result = agent_result
+                break
         
-        # Recomendación general de keywords
-        elif "keyword" in recommendation_lower or "seo" in recommendation_lower:
-            try:
-                current_keywords = listing.backend_keywords or []
-                if isinstance(current_keywords, str):
-                    current_keywords = [kw.strip() for kw in current_keywords.split(',') if kw.strip()]
-                elif not isinstance(current_keywords, list):
-                    current_keywords = []
-                
-                new_keywords = current_keywords.copy() if current_keywords else []
-                suggested = ["premium", "quality"]
-                
-                for kw in suggested:
-                    if kw not in new_keywords:
-                        new_keywords.append(kw)
-                
-                if new_keywords != current_keywords:
-                    updated_fields["backend_keywords"] = new_keywords
-            except Exception:
-                pass
+        if not image_agent_result:
+            return {
+                "listing_id": listing_id,
+                "images": [],
+                "total_images": 0,
+                "message": "No se encontraron imágenes para este listing"
+            }
         
-        return updated_fields if updated_fields else None
+        agent_data = image_agent_result.agent_data or {}
+        downloaded_images = agent_data.get("downloaded_images", [])
+        organized_images = agent_data.get("organized_images", {})
         
+        return {
+            "listing_id": listing_id,
+            "images": downloaded_images,
+            "organized_images": organized_images,
+            "total_images": len(downloaded_images),
+            "image_categories": {
+                category: len(images) 
+                for category, images in organized_images.items()
+            },
+            "recommendations": image_agent_result.recommendations or []
+        }
+        
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.error(f"Error aplicando recomendación: {str(e)}")
-        return None
+        logger.error(f"Error obteniendo imágenes del listing {listing_id}: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error obteniendo imágenes: {str(e)}"
+        )
+
+@router.post("/{listing_id}/regenerate-images")
+async def regenerate_listing_images(
+    listing_id: int,
+    request: Request,
+    search_params: Optional[Dict[str, Any]] = None,
+    db: AsyncSession = Depends(get_db)
+) -> Dict[str, Any]:
+    """
+    Regenera las imágenes para un listing existente
+    """
+    try:
+        listing_service = ListingService(db)
+        listing = await listing_service.get_listing(listing_id)
+        
+        if not listing:
+            raise HTTPException(status_code=404, detail=LISTING_NOT_FOUND)
+        
+        # Importar el agente de búsqueda real
+        from ..agents.real_image_search_agent import RealImageSearchAgent
+        
+        # Crear datos estructurados para el agente
+        agent_data = {
+            "product_data": {
+                "product_name": listing.product_name,
+                "category": listing.category,
+                "features": listing.bullet_points or [],
+                "use_cases": [],
+                "description": listing.description,
+                "target_audience": "General",
+                "price_range": f"${listing.target_price or 0}"
+            },
+            "previous_results": {}
+        }
+        
+        # Agregar parámetros de búsqueda personalizados si se proporcionan
+        if search_params:
+            agent_data["product_data"].update(search_params)
+        
+        # Ejecutar el agente de búsqueda real
+        image_agent = RealImageSearchAgent()
+        result = await image_agent.process(agent_data)
+        
+        # Limpiar recursos del agente
+        await image_agent.cleanup()
+        
+        # Guardar el nuevo resultado del agente
+        await listing_service.update_agent_result(
+            listing_id, 
+            "RealImageSearchAgent", 
+            result
+        )
+        
+        if result.status == "success":
+            # Transform image data to include accessible URLs with dynamic base URL
+            images_data = result.data.get("downloaded_images", [])
+            accessible_images = []
+            
+            for img in images_data:
+                accessible_images.append({
+                    "url": get_image_url(request, img.get('filename', '')),
+                    "thumbnail_url": get_image_url(request, img.get('thumbnail_filename', img.get('filename', ''))),
+                    "filename": img.get("filename", ""),
+                    "description": img.get("description", ""),
+                    "search_term": img.get("search_term", ""),
+                    "relevance_score": img.get("relevance_score", 0.0),
+                    "size": img.get("size", 0),
+                    "status": img.get("status", "downloaded")
+                })
+            
+            return {
+                "success": True,
+                "product_type": result.data.get("product_type_detected", "Unknown"),
+                "images": accessible_images,
+                "image_categories": result.data.get("image_categories", {}),
+                "total_images": len(accessible_images),
+                "search_terms_used": result.data.get("search_terms_used", []),
+                "recommendations": result.recommendations,
+                "confidence": result.confidence,
+                "processing_time": result.processing_time,
+                "notes": result.notes,
+                "message": "Imágenes regeneradas exitosamente",
+                "listing_id": listing_id
+            }
+        else:
+            return {
+                "success": False,
+                "error": result.data.get("error", "Error desconocido"),
+                "message": "No se pudieron regenerar imágenes relevantes",
+                "listing_id": listing_id
+            }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error regenerando imágenes para listing {listing_id}: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error regenerando imágenes: {str(e)}"
+        )
+
+@router.get("/{listing_id}")
+async def get_listing_detail(
+    listing_id: int, 
+    db: AsyncSession = Depends(get_db)
+) -> Dict[str, Any]:
+    """
+    Obtiene detalles completos de un listing específico
+    """
+    try:
+        listing_service = ListingService(db)
+        listing = await listing_service.get_listing(listing_id)
+        
+        if not listing:
+            raise HTTPException(status_code=404, detail=LISTING_NOT_FOUND)
+        
+        return {
+            "listing": {
+                "id": listing.id,
+                "product_name": listing.product_name,
+                "category": listing.category,
+                "target_price": listing.target_price,
+                "title": listing.title,
+                "bullet_points": listing.bullet_points,
+                "description": listing.description,
+                "search_terms": listing.search_terms,
+                "backend_keywords": listing.backend_keywords,
+                "images_order": listing.images_order,
+                "a_plus_content": listing.a_plus_content,
+                "confidence_score": listing.confidence_score,
+                "processing_notes": listing.processing_notes,
+                "recommendations": listing.recommendations,
+                "status": listing.status,
+                "version": listing.version,
+                "created_at": listing.created_at,
+                "updated_at": listing.updated_at,
+                "input_data": listing.input_data
+            },
+            "agent_results": [
+                {
+                    "id": ar.id,
+                    "agent_name": ar.agent_name,
+                    "status": ar.status,
+                    "confidence": ar.confidence,
+                    "processing_time": ar.processing_time,
+                    "agent_data": ar.agent_data,
+                    "notes": ar.notes,
+                    "recommendations": ar.recommendations,
+                    "created_at": ar.created_at
+                }
+                for ar in listing.agent_results
+            ],
+            "versions": [
+                {
+                    "id": v.id,
+                    "version_number": v.version_number,
+                    "title": v.title,
+                    "confidence_score": v.confidence_score,
+                    "change_reason": v.change_reason,
+                    "created_at": v.created_at
+                }
+                for v in listing.listing_versions
+            ]
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error obteniendo listing {listing_id}: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error obteniendo listing: {str(e)}"
+        )

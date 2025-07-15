@@ -1,5 +1,14 @@
-// Dashboard JavaScript
-const API_BASE_URL = 'http://localhost:8000';
+// Dashboard JavaScript - Updated 2025-07-14
+// API Base URL - Configuración dinámica
+const API_BASE_URL = (() => {
+    // La API siempre está en el puerto 8000
+    const apiPort = '8000';
+    const currentHost = window.location.hostname || 'localhost';
+    const currentProtocol = window.location.protocol || 'http:';
+    return `${currentProtocol}//${currentHost}:${apiPort}`;
+})();
+
+console.log('API Base URL configurada dinámicamente:', API_BASE_URL);
 
 // Global variables
 let allListings = [];

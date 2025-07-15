@@ -8,7 +8,7 @@ analizando aspectos como conversión, persuasión, SEO, psicología del consumid
 
 import json
 import logging
-from typing import Dict, Any
+from typing import Dict, Any, List
 from datetime import datetime
 
 from .base_agent import BaseAgent
@@ -55,17 +55,29 @@ class MarketingReviewAgent(BaseAgent):
                 analysis_data = response["parsed_data"]
                 analysis_data = self._calculate_additional_metrics(analysis_data, listing_data)
                 
+                # Extraer recomendaciones de los datos de análisis
+                recommendations = self._extract_recommendations_from_analysis(analysis_data)
+                
                 return {
                     "success": True,
                     "agent_name": self.agent_name,
                     "data": analysis_data,
                     "confidence": analysis_data.get("confidence_score", 0.7),
                     "processing_time": response["processing_time"],
+                    "recommendations": recommendations,
+                    "notes": [f"Puntuación de marketing: {analysis_data.get('puntuacion_general', 0)}/10"],
                     "timestamp": datetime.now().isoformat()
                 }
             else:
                 # Fallback si no se pudo parsear
-                return self._create_fallback_result(product_data, listing_data)
+                fallback_result = self._create_fallback_result(product_data, listing_data)
+                fallback_result["recommendations"] = [
+                    "Análisis automático limitado - revisar manualmente",
+                    "Optimizar título para mejor visibilidad",
+                    "Mejorar descripción con elementos persuasivos"
+                ]
+                fallback_result["notes"] = ["Análisis de fallback aplicado"]
+                return fallback_result
                 
         except Exception as e:
             logger.error(f"Error en análisis de marketing: {str(e)}")
@@ -235,3 +247,66 @@ Proporciona análisis detallado en formato JSON con:
             logger.error(f"Error calculando métricas adicionales: {e}")
         
         return result
+    
+    def _extract_recommendations_from_analysis(self, analysis_data: Dict[str, Any]) -> List[str]:
+        """
+        Extrae recomendaciones específicas del análisis de marketing.
+        """
+        recommendations = []
+        
+        try:
+            # Extraer de recomendaciones adicionales
+            if 'recomendaciones_adicionales' in analysis_data:
+                adicionales = analysis_data['recomendaciones_adicionales']
+                if isinstance(adicionales, list):
+                    recommendations.extend(adicionales)
+            
+            # Extraer de mejoras recomendadas
+            mejoras = analysis_data.get('mejoras_recomendadas', {})
+            
+            # Título optimizado
+            if 'titulo_optimizado' in mejoras:
+                titulo_data = mejoras['titulo_optimizado']
+                if isinstance(titulo_data, dict) and titulo_data.get('cambios_realizados'):
+                    cambios = titulo_data['cambios_realizados']
+                    if isinstance(cambios, list) and cambios:
+                        recommendations.append(f"Optimizar título: {', '.join(cambios[:2])}")
+            
+            # Keywords adicionales
+            if 'keywords_adicionales' in mejoras:
+                keywords_data = mejoras['keywords_adicionales']
+                if isinstance(keywords_data, dict):
+                    total_keywords = 0
+                    for categoria in ['alta_conversion', 'long_tail', 'semanticas']:
+                        if categoria in keywords_data and isinstance(keywords_data[categoria], list):
+                            total_keywords += len(keywords_data[categoria])
+                    
+                    if total_keywords > 0:
+                        recommendations.append(f"Incorporar {total_keywords} keywords adicionales para mejor SEO")
+            
+            # Análisis de categorías con puntuación baja
+            analisis = analysis_data.get('analisis_marketing', {})
+            for categoria, datos in analisis.items():
+                if isinstance(datos, dict) and datos.get('puntuacion', 10) < 7:
+                    categoria_nombre = categoria.replace('_', ' ').title()
+                    debilidades = datos.get('debilidades', [])
+                    if debilidades and isinstance(debilidades, list):
+                        recommendations.append(f"Mejorar {categoria_nombre}: {debilidades[0]}")
+            
+            # Prioridades de implementación
+            if 'prioridades_implementacion' in analysis_data:
+                prioridades = analysis_data['prioridades_implementacion']
+                if isinstance(prioridades, list) and prioridades:
+                    recommendations.append(f"Prioridad alta: {prioridades[0]}")
+            
+            # Puntuación general baja
+            puntuacion = analysis_data.get('puntuacion_general', 10)
+            if puntuacion < 6:
+                recommendations.append("Revisar estrategia de marketing general - puntuación por debajo del promedio")
+            
+            # Limitar a máximo 5 recomendaciones más relevantes
+            return recommendations[:5]
+            
+        except Exception as e:
+            logger.error(f"Error extrayendo recomendaciones: {e}")
+            return ["Revisar análisis de marketing completo en datos del agente"]

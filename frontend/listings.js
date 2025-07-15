@@ -1,6 +1,13 @@
-// Configuration
-const API_BASE_URL = 'http://localhost:8000';
+// Configuration - API Base URL dinámica
+const API_BASE_URL = (() => {
+    // La API siempre está en el puerto 8000
+    const apiPort = '8000';
+    const currentHost = window.location.hostname || 'localhost';
+    const currentProtocol = window.location.protocol || 'http:';
+    return `${currentProtocol}//${currentHost}:${apiPort}`;
+})();
 
+console.log('API Base URL configurada dinámicamente:', API_BASE_URL);
 console.log('🚀 listings.js loaded successfully!');
 
 // Global variables

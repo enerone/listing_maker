@@ -15,6 +15,7 @@ from .seo_visual_agent import SEOVisualAgent
 from .competitive_analysis_agent import CompetitiveAnalysisAgent
 from .social_content_agent import SocialContentAgent
 from .marketing_review_agent import MarketingReviewAgent
+from .image_search_agent import ImageSearchAgent
 from ..models import (
     ProductInput, ProcessedListing, AgentResponse,
     CustomerProfile, TechnicalSpecs, BoxContents, 
@@ -41,6 +42,7 @@ class ListingOrchestrator:
             "competitive_analysis": CompetitiveAnalysisAgent(),
             "social_content": SocialContentAgent(),
             "marketing_review": MarketingReviewAgent(),
+            "image_search": ImageSearchAgent(),
         }
         self._last_agent_responses = {}  # Almacenar última ejecución
         

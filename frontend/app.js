@@ -3,8 +3,16 @@ let currentStep = 1;
 let formData = {};
 let generatedListing = null;
 
-// API Base URL
-const API_BASE = 'http://localhost:8000';
+// API Base URL - Configuración dinámica
+const API_BASE = (() => {
+    // La API siempre está en el puerto 8000
+    const apiPort = '8000';
+    const currentHost = window.location.hostname || 'localhost';
+    const currentProtocol = window.location.protocol || 'http:';
+    return `${currentProtocol}//${currentHost}:${apiPort}`;
+})();
+
+console.log('API Base URL configurada dinámicamente:', API_BASE);
 
 // Funciones globales para onclick (deben estar disponibles inmediatamente)
 function addFeatureField() {

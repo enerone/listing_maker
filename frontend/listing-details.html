@@ -45,6 +45,32 @@
             50% { transform: scale(1.05); }
             100% { transform: scale(1); }
         }
+        
+        /* Estilos para galería de imágenes */
+        .image-card {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        
+        .image-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        .image-overlay {
+            transition: opacity 0.2s ease;
+        }
+        
+        .image-card:hover .image-overlay {
+            opacity: 1;
+        }
+        
+        .aspect-square {
+            aspect-ratio: 1 / 1;
+        }
+        
+        .grid-responsive {
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        }
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
@@ -116,6 +142,9 @@
                     </button>
                     <button onclick="showTab('seo')" class="tab-button py-4 px-1 border-b-2 border-transparent font-medium text-sm hover:text-gray-700 hover:border-gray-300">
                         <i class="fas fa-search mr-2"></i>SEO & Keywords
+                    </button>
+                    <button onclick="showTab('images')" class="tab-button py-4 px-1 border-b-2 border-transparent font-medium text-sm hover:text-gray-700 hover:border-gray-300">
+                        <i class="fas fa-images mr-2"></i>Imágenes
                     </button>
                     <button onclick="showTab('agents')" class="tab-button py-4 px-1 border-b-2 border-transparent font-medium text-sm hover:text-gray-700 hover:border-gray-300">
                         <i class="fas fa-robot mr-2"></i>Agentes IA
@@ -213,6 +242,94 @@
                     </div>
                 </div>
 
+                <!-- Images Tab -->
+                <div id="images" class="tab-content">
+                    <div class="space-y-6">
+                        <!-- Image Search Controls -->
+                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                            <div class="flex items-center justify-between mb-4">
+                                <div>
+                                    <h3 class="text-lg font-semibold text-blue-900 mb-2">
+                                        <i class="fas fa-images mr-2"></i>Imágenes del Producto
+                                    </h3>
+                                    <p class="text-blue-800 text-sm">
+                                        Busca y gestiona las imágenes para tu listing de Amazon
+                                    </p>
+                                </div>
+                                <div class="flex space-x-3">
+                                    <button id="searchImagesBtn" onclick="searchImages()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors">
+                                        <i class="fas fa-search mr-2"></i>Buscar Imágenes
+                                    </button>
+                                    <button id="regenerateImagesBtn" onclick="regenerateImages()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors">
+                                        <i class="fas fa-sync mr-2"></i>Regenerar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Image Results -->
+                        <div id="imageResults" class="hidden">
+                            <!-- Image Statistics -->
+                            <div class="bg-white rounded-lg border p-4 mb-4">
+                                <div class="flex items-center justify-between">
+                                    <h4 class="text-md font-semibold text-gray-900">
+                                        <i class="fas fa-chart-bar mr-2 text-purple-600"></i>Estadísticas de Imágenes
+                                    </h4>
+                                    <span id="imageCount" class="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm font-medium">
+                                        0 imágenes encontradas
+                                    </span>
+                                </div>
+                                <div id="imageCategories" class="mt-3 flex flex-wrap gap-2">
+                                    <!-- Image categories will be populated here -->
+                                </div>
+                            </div>
+
+                            <!-- Image Gallery -->
+                            <div class="bg-white rounded-lg border p-4">
+                                <h4 class="text-md font-semibold text-gray-900 mb-4">
+                                    <i class="fas fa-images mr-2 text-green-600"></i>Galería de Imágenes
+                                </h4>
+                                <div id="imageGallery" class="grid grid-responsive gap-4">
+                                    <!-- Images will be populated here -->
+                                </div>
+                            </div>
+
+                            <!-- Image Recommendations -->
+                            <div id="imageRecommendations" class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                                <h4 class="text-md font-semibold text-yellow-900 mb-2">
+                                    <i class="fas fa-lightbulb mr-2"></i>Recomendaciones de Imágenes
+                                </h4>
+                                <ul id="imageRecommendationsList" class="space-y-1 text-sm text-yellow-800">
+                                    <!-- Recommendations will be populated here -->
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- Loading State -->
+                        <div id="imageLoading" class="hidden">
+                            <div class="bg-white rounded-lg border p-8 text-center">
+                                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                                <p class="text-gray-600">Buscando imágenes para tu producto...</p>
+                                <p class="text-sm text-gray-500 mt-2">Este proceso puede tardar unos segundos</p>
+                            </div>
+                        </div>
+
+                        <!-- Empty State -->
+                        <div id="imageEmpty" class="bg-white rounded-lg border p-8 text-center">
+                            <div class="text-gray-400 mb-4">
+                                <i class="fas fa-images text-6xl"></i>
+                            </div>
+                            <h3 class="text-lg font-semibold text-gray-900 mb-2">No hay imágenes disponibles</h3>
+                            <p class="text-gray-600 mb-4">
+                                Haz clic en "Buscar Imágenes" para obtener imágenes automáticamente para tu producto
+                            </p>
+                            <button onclick="searchImages()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors">
+                                <i class="fas fa-search mr-2"></i>Buscar Imágenes Ahora
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Agents Tab -->
                 <div id="agents" class="tab-content">
                     <div class="space-y-6">
@@ -252,10 +369,13 @@
         <span id="toastMessage"></span>
     </div>
 
+    <script src="/static/config.js"></script>
     <script>
         // Global variables
         let currentListing = null;
-        const API_BASE_URL = 'http://localhost:8000';
+        // Usar configuración dinámica de API base URL
+        const API_BASE_URL = window.Config ? window.Config.getApiBaseUrl() : 
+            `${window.location.protocol}//${window.location.hostname}:${window.location.port || '8000'}`;
 
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
@@ -280,6 +400,9 @@
                 
                 populateListingDetails(data.listing);
                 populateAgentResults(data.agent_results || []);
+                
+                // Load existing images
+                await loadExistingImages();
                 
                 showToast('Listing cargado exitosamente', 'success');
             } catch (error) {
@@ -323,17 +446,23 @@
             const recommendationsEl = document.getElementById('recommendations');
             if (listing.recommendations && listing.recommendations.length > 0) {
                 recommendationsEl.innerHTML = listing.recommendations.map((rec, index) => 
-                    `<li class="flex items-start justify-between p-3 bg-yellow-50 rounded-lg border border-yellow-200 mb-2">
+                    `<li class="flex items-start justify-between p-3 bg-yellow-50 rounded-lg border border-yellow-200 mb-2" data-recommendation-id="general-${index}">
                         <div class="flex items-start flex-1">
                             <i class="fas fa-lightbulb text-yellow-500 mr-2 mt-1"></i>
                             <span class="text-sm text-gray-700">${rec}</span>
                         </div>
-                        <button onclick="applyRecommendation('General', ${index}, '${rec.replace(/'/g, "\\'")}', '${getCurrentListingId()}')" 
-                                class="ml-3 px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs rounded-lg transition-colors flex items-center"
-                                title="Aplicar esta recomendación">
-                            <i class="fas fa-magic-wand-sparkles mr-1"></i>
-                            Aplicar
-                        </button>
+                        <div class="flex items-center ml-3">
+                            <span class="applied-badge hidden text-green-600 text-xs font-medium mr-2">
+                                <i class="fas fa-check-circle mr-1"></i>
+                                Aplicado
+                            </span>
+                            <button onclick="applyRecommendation('general', ${index}, '${rec.replace(/'/g, "\\'")}', '${getCurrentListingId()}')" 
+                                    class="apply-btn px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs rounded-lg transition-colors flex items-center"
+                                    title="Aplicar esta recomendación">
+                                <i class="fas fa-magic-wand-sparkles mr-1"></i>
+                                Aplicar
+                            </button>
+                        </div>
                     </li>`
                 ).join('');
             } else {
@@ -402,6 +531,11 @@
             // Raw data
             const rawDataEl = document.getElementById('rawData');
             rawDataEl.textContent = JSON.stringify(listing, null, 2);
+            
+            // Load applied recommendations state
+            setTimeout(() => {
+                loadAppliedRecommendations(listing.id);
+            }, 100);
         }
 
         // Populate agent results
@@ -544,16 +678,28 @@
                 listingId
             });
 
-            // Show loading state
-            const button = event.target.closest('button');
-            const originalContent = button.innerHTML;
+            // Determine recommendation ID based on agent name
+            const recommendationId = `${agentName.toLowerCase()}-${recommendationIndex}`;
+            const element = document.querySelector(`[data-recommendation-id="${recommendationId}"]`);
+            
+            if (!element) {
+                console.error('No se encontró el elemento de recomendación');
+                return;
+            }
+            
+            const appliedBadge = element.querySelector('.applied-badge');
+            const applyBtn = element.querySelector('.apply-btn');
+            
             // Check if already applied
-            if (button.classList.contains('recommendation-applied')) {
+            if (applyBtn.classList.contains('hidden')) {
                 showToast('Esta recomendación ya fue aplicada', 'info');
                 return;
             }
-            button.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Aplicando...';
-            button.disabled = true;
+
+            // Show loading state
+            const originalContent = applyBtn.innerHTML;
+            applyBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Aplicando...';
+            applyBtn.disabled = true;
 
             try {
                 // Call API to apply recommendation
@@ -577,41 +723,27 @@
                 
                 // Show success message
                 showToast('✅ Recomendación aplicada exitosamente', 'success');
-                // Update button to permanent applied state
-                button.innerHTML = '<i class="fas fa-check-circle mr-1"></i>Aplicada';
-                button.classList.add('recommendation-applied');
-                button.classList.remove('bg-blue-500', 'hover:bg-blue-600');
-                button.classList.add('bg-green-500', 'hover:bg-green-600', 'cursor-default');
-                button.disabled = true;
-                // Add tooltip to show when it was applied
-                const now = new Date().toLocaleString('es-ES');
-                button.title = `Aplicada el ${now}`;
-                // Add visual feedback to the recommendation container
-                const listItem = button.closest('li, .flex');
-                if (listItem) {
-                    listItem.classList.add('recommendation-applied-item');
-                    listItem.style.backgroundColor = '#f0fdf4';
-                    listItem.style.borderColor = '#10b981';
-                    listItem.style.borderWidth = '2px';
-                }
                 
-                // Optional: Show detailed result in console for debugging
-                console.log('Recomendación aplicada:', result);
-
-                // Reload listing data to show updates
-                const currentListingId = getCurrentListingId();
-                if (currentListingId) {
-                    await loadListingDetails(currentListingId);
-                    showToast('🔄 Datos actualizados automáticamente', 'info');
-                }
+                // Update visual state
+                appliedBadge.classList.remove('hidden');
+                applyBtn.classList.add('hidden');
+                
+                // Change background to indicate applied
+                element.classList.remove('bg-yellow-50', 'border-yellow-200');
+                element.classList.add('bg-green-50', 'border-green-200');
+                
+                // Store in localStorage for persistence
+                storeAppliedRecommendation(listingId, recommendationId, recommendationText);
+                
+                console.log('✅ Recomendación aplicada:', recommendationText);
 
             } catch (error) {
-                console.error('Error applying recommendation:', error);
-                showToast(`❌ Error al aplicar recomendación: ${error.message}`, 'error');
+                console.error('Error aplicando recomendación:', error);
+                showToast(`Error: ${error.message}`, 'error');
                 
-                // Restore button on error
-                button.innerHTML = originalContent;
-                button.disabled = false;
+                // Restore button state
+                applyBtn.innerHTML = originalContent;
+                applyBtn.disabled = false;
             }
         }
 
@@ -646,6 +778,443 @@
             setTimeout(() => {
                 toast.classList.add('translate-y-full');
             }, 4000);
+        }
+
+        // Image search functions
+        async function searchImages() {
+            if (!currentListing) {
+                showToast('No hay listing cargado', 'error');
+                return;
+            }
+
+            const button = document.getElementById('searchImagesBtn');
+            const originalContent = button.innerHTML;
+            
+            try {
+                // Show loading state
+                showImageLoading();
+                button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Buscando...';
+                button.disabled = true;
+
+                // Prepare search data
+                const searchData = {
+                    product_name: currentListing.product_name,
+                    description: currentListing.description || '',
+                    category: currentListing.category || 'Other',
+                    features: currentListing.bullet_points || [],
+                    target_audience: 'General',
+                    price_range: `$${currentListing.target_price || 0}`
+                };
+
+                // Make API call
+                const response = await fetch(`${API_BASE_URL}/api/listings/search-images`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(searchData)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayImages(data);
+                    showToast('Imágenes encontradas exitosamente', 'success');
+                } else {
+                    throw new Error(data.error || 'Error desconocido');
+                }
+
+            } catch (error) {
+                console.error('Error searching images:', error);
+                showToast(`Error al buscar imágenes: ${error.message}`, 'error');
+                showImageEmpty();
+            } finally {
+                // Restore button
+                button.innerHTML = originalContent;
+                button.disabled = false;
+            }
+        }
+
+        async function regenerateImages() {
+            if (!currentListing) {
+                showToast('No hay listing cargado', 'error');
+                return;
+            }
+
+            const button = document.getElementById('regenerateImagesBtn');
+            const originalContent = button.innerHTML;
+            
+            try {
+                // Show loading state
+                showImageLoading();
+                button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Regenerando...';
+                button.disabled = true;
+
+                // Make API call
+                const response = await fetch(`${API_BASE_URL}/api/listings/${currentListing.id}/regenerate-images`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({})
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayImages(data);
+                    showToast('Imágenes regeneradas exitosamente', 'success');
+                } else {
+                    throw new Error(data.error || 'Error desconocido');
+                }
+
+            } catch (error) {
+                console.error('Error regenerating images:', error);
+                showToast(`Error al regenerar imágenes: ${error.message}`, 'error');
+                showImageEmpty();
+            } finally {
+                // Restore button
+                button.innerHTML = originalContent;
+                button.disabled = false;
+            }
+        }
+
+        function displayImages(data) {
+            const imageResults = document.getElementById('imageResults');
+            const imageEmpty = document.getElementById('imageEmpty');
+            const imageLoading = document.getElementById('imageLoading');
+            const imageCount = document.getElementById('imageCount');
+            const imageGallery = document.getElementById('imageGallery');
+            const imageCategories = document.getElementById('imageCategories');
+            const imageRecommendationsList = document.getElementById('imageRecommendationsList');
+
+            // Hide loading and empty states
+            imageLoading.classList.add('hidden');
+            imageEmpty.classList.add('hidden');
+            
+            // Show results
+            imageResults.classList.remove('hidden');
+
+            // Update count with additional info
+            const totalImages = data.total_images || data.images?.length || 0;
+            const confidence = data.confidence ? `(${(data.confidence * 100).toFixed(0)}% confianza)` : '';
+            const productType = data.product_type ? `Tipo: ${data.product_type}` : '';
+            
+            let countText = `<span class="total-images-count">${totalImages}</span> imágenes encontradas`;
+            if (productType) {
+                countText += ` • ${productType}`;
+            }
+            if (confidence) {
+                countText += ` • ${confidence}`;
+            }
+            
+            imageCount.innerHTML = countText;
+
+            // Clear and populate gallery
+            imageGallery.innerHTML = '';
+            
+            if (data.images && data.images.length > 0) {
+                data.images.forEach((imageData, index) => {
+                    // Handle both string paths and object format
+                    let imagePath, filename, title, searchTerm, relevanceScore;
+                    
+                    if (typeof imageData === 'string') {
+                        // Old format: simple string path
+                        imagePath = imageData;
+                        filename = imageData.split('/').pop();
+                        title = `Imagen ${index + 1}`;
+                        searchTerm = '';
+                        relevanceScore = 0;
+                    } else {
+                        // New format: object with properties
+                        imagePath = imageData.original_url || imageData.local_path || imageData.url;
+                        filename = imageData.filename || (imagePath ? imagePath.split('/').pop() : `imagen_${index + 1}`);
+                        title = imageData.title || `Imagen ${index + 1}`;
+                        searchTerm = imageData.search_term || '';
+                        relevanceScore = imageData.relevance_score || 0;
+                    }
+                    
+                    const imageCard = document.createElement('div');
+                    imageCard.className = 'bg-white border rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow image-card';
+                    
+                    // Add relevance score indicator
+                    const relevanceClass = relevanceScore > 0.8 ? 'bg-green-600' : 
+                                         relevanceScore > 0.6 ? 'bg-yellow-600' : 'bg-gray-600';
+                    
+                    imageCard.innerHTML = `
+                        <div class="aspect-square relative">
+                            <!-- Loading placeholder -->
+                            <div class="loading-placeholder absolute inset-0 flex items-center justify-center bg-gray-100">
+                                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                            </div>
+                            
+                            <img src="${imagePath}" alt="${title}" 
+                                 class="w-full h-full object-cover"
+                                 onerror="hideImageCard(this)"
+                                 onload="showImageCard(this)">
+                            <div class="absolute top-2 right-2 bg-black bg-opacity-50 text-white px-2 py-1 rounded text-xs image-overlay opacity-80">
+                                ${index + 1}
+                            </div>
+                            ${relevanceScore > 0 ? `
+                                <div class="absolute top-2 left-2 ${relevanceClass} text-white px-2 py-1 rounded text-xs">
+                                    ${(relevanceScore * 100).toFixed(0)}%
+                                </div>
+                            ` : ''}
+                        </div>
+                        <div class="p-3">
+                            <p class="text-sm font-medium text-gray-800 truncate" title="${title}">${title}</p>
+                            ${searchTerm ? `<p class="text-xs text-gray-500 mt-1">Término: ${searchTerm}</p>` : ''}
+                            <div class="mt-2 flex space-x-2">
+                                <button onclick="downloadImage('${imagePath}')" 
+                                        class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-1 px-2 rounded text-sm transition-colors">
+                                    <i class="fas fa-download mr-1"></i>Descargar
+                                </button>
+                                <button onclick="viewImageFullscreen('${imagePath}')" 
+                                        class="bg-gray-600 hover:bg-gray-700 text-white py-1 px-2 rounded text-sm transition-colors">
+                                    <i class="fas fa-expand"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    
+                    // Initially hide the card until image loads
+                    imageCard.style.display = 'none';
+                    imageGallery.appendChild(imageCard);
+                });
+            } else {
+                imageGallery.innerHTML = '<div class="col-span-full text-center text-gray-500 py-8">No se encontraron imágenes</div>';
+            }
+
+            // Update categories - support both old and new format
+            imageCategories.innerHTML = '';
+            const categoriesData = data.image_categories || data.organized_images || {};
+            
+            if (Object.keys(categoriesData).length > 0) {
+                Object.entries(categoriesData).forEach(([category, images]) => {
+                    const categoryBadge = document.createElement('span');
+                    categoryBadge.className = 'bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm';
+                    
+                    // Format category name
+                    const formattedCategory = category.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                    const imageCount = Array.isArray(images) ? images.length : 0;
+                    
+                    categoryBadge.textContent = `${formattedCategory}: ${imageCount}`;
+                    imageCategories.appendChild(categoryBadge);
+                });
+            }
+
+            // Update recommendations
+            imageRecommendationsList.innerHTML = '';
+            if (data.recommendations && data.recommendations.length > 0) {
+                data.recommendations.forEach((recommendation, index) => {
+                    const li = document.createElement('li');
+                    li.className = 'flex items-start justify-between';
+                    li.setAttribute('data-recommendation-id', `image-${index}`);
+                    li.innerHTML = `
+                        <div class="flex items-start flex-1">
+                            <i class="fas fa-lightbulb text-yellow-600 mr-2 mt-0.5"></i>
+                            <span>${recommendation}</span>
+                        </div>
+                        <div class="flex items-center ml-3">
+                            <span class="applied-badge hidden text-green-600 text-xs font-medium mr-2">
+                                <i class="fas fa-check-circle mr-1"></i>
+                                Aplicado
+                            </span>
+                            <button onclick="applyRecommendation('image', ${index}, '${recommendation.replace(/'/g, "\\'")}', '${getCurrentListingId()}')" 
+                                    class="apply-btn px-2 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs rounded transition-colors flex items-center"
+                                    title="Aplicar esta recomendación">
+                                <i class="fas fa-check mr-1"></i>
+                                Aplicar
+                            </button>
+                        </div>
+                    `;
+                    imageRecommendationsList.appendChild(li);
+                });
+            } else {
+                imageRecommendationsList.innerHTML = '<li class="text-gray-500">No hay recomendaciones disponibles</li>';
+            }
+            
+            // Load applied recommendations state for image recommendations
+            setTimeout(() => {
+                loadAppliedRecommendations(getCurrentListingId());
+            }, 100);
+        }
+
+        function showImageLoading() {
+            document.getElementById('imageResults').classList.add('hidden');
+            document.getElementById('imageEmpty').classList.add('hidden');
+            document.getElementById('imageLoading').classList.remove('hidden');
+        }
+
+        function showImageEmpty() {
+            document.getElementById('imageResults').classList.add('hidden');
+            document.getElementById('imageLoading').classList.add('hidden');
+            document.getElementById('imageEmpty').classList.remove('hidden');
+        }
+
+        function downloadImage(imagePath) {
+            // Create a temporary link to download the image
+            const link = document.createElement('a');
+            link.href = imagePath;
+            link.download = imagePath.split('/').pop();
+            link.target = '_blank';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            showToast('Descarga iniciada', 'success');
+        }
+
+        // Load existing images when listing is loaded
+        async function loadExistingImages() {
+            if (!currentListing) return;
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/listings/${currentListing.id}/images`);
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.images && data.images.length > 0) {
+                        // Transform data to match search-images format
+                        const transformedData = {
+                            success: true,
+                            images: data.images,
+                            organized_images: data.organized_images || {},
+                            total_images: data.total_images || data.images.length,
+                            recommendations: data.recommendations || []
+                        };
+                        displayImages(transformedData);
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading existing images:', error);
+                // Don't show error toast for this, just show empty state
+            }
+        }
+
+        function viewImageFullscreen(imagePath) {
+            // Create modal overlay
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50';
+            modal.onclick = () => document.body.removeChild(modal);
+            
+            // Create modal content
+            const modalContent = document.createElement('div');
+            modalContent.className = 'max-w-4xl max-h-4xl p-4';
+            modalContent.onclick = (e) => e.stopPropagation();
+            
+            modalContent.innerHTML = `
+                <div class="relative">
+                    <img src="${imagePath}" alt="Imagen en pantalla completa" 
+                         class="max-w-full max-h-full object-contain">
+                    <button onclick="document.body.removeChild(this.closest('.fixed'))" 
+                            class="absolute top-2 right-2 bg-black bg-opacity-50 text-white rounded-full w-8 h-8 flex items-center justify-center hover:bg-opacity-75">
+                        <i class="fas fa-times"></i>
+                    </button>
+                    <div class="absolute bottom-2 left-2 bg-black bg-opacity-50 text-white px-3 py-1 rounded">
+                        ${imagePath.split('/').pop()}
+                    </div>
+                </div>
+            `;
+            
+            modal.appendChild(modalContent);
+            document.body.appendChild(modal);
+        }
+
+        // Functions to handle image loading and errors
+        function showImageCard(imgElement) {
+            // Show the image card when image loads successfully
+            const imageCard = imgElement.closest('.image-card');
+            if (imageCard) {
+                // Hide loading placeholder
+                const loadingPlaceholder = imageCard.querySelector('.loading-placeholder');
+                if (loadingPlaceholder) {
+                    loadingPlaceholder.style.display = 'none';
+                }
+                
+                // Show the image card
+                imageCard.style.display = 'block';
+                imageCard.style.opacity = '0';
+                imageCard.style.transition = 'opacity 0.3s ease-in-out';
+                
+                // Fade in effect
+                setTimeout(() => {
+                    imageCard.style.opacity = '1';
+                }, 50);
+                
+                // Update counter
+                updateImageCounter();
+            }
+        }
+
+        function hideImageCard(imgElement) {
+            // Hide the image card when image fails to load
+            const imageCard = imgElement.closest('.image-card');
+            if (imageCard) {
+                imageCard.style.display = 'none';
+                // Update the counter
+                updateImageCounter();
+            }
+        }
+
+        function updateImageCounter() {
+            // Update the displayed image count
+            const allCards = document.querySelectorAll('.image-card');
+            let visibleCount = 0;
+            
+            allCards.forEach(card => {
+                const computedStyle = window.getComputedStyle(card);
+                if (computedStyle.display !== 'none') {
+                    visibleCount++;
+                }
+            });
+            
+            const totalImagesSpan = document.querySelector('.total-images-count');
+            if (totalImagesSpan) {
+                totalImagesSpan.textContent = visibleCount;
+            }
+        }
+
+        // Function to store applied recommendations
+        function storeAppliedRecommendation(listingId, recommendationId, recommendation) {
+            const key = `applied_recommendations_${listingId}`;
+            let applied = JSON.parse(localStorage.getItem(key) || '{}');
+            
+            applied[recommendationId] = {
+                recommendation: recommendation,
+                appliedAt: new Date().toISOString()
+            };
+            
+            localStorage.setItem(key, JSON.stringify(applied));
+        }
+
+        // Function to load applied recommendations
+        function loadAppliedRecommendations(listingId) {
+            const key = `applied_recommendations_${listingId}`;
+            const applied = JSON.parse(localStorage.getItem(key) || '{}');
+            
+            // Apply the stored states
+            Object.keys(applied).forEach(recommendationId => {
+                const element = document.querySelector(`[data-recommendation-id="${recommendationId}"]`);
+                if (element) {
+                    const appliedBadge = element.querySelector('.applied-badge');
+                    const applyBtn = element.querySelector('.apply-btn');
+                    
+                    if (appliedBadge && applyBtn) {
+                        appliedBadge.classList.remove('hidden');
+                        applyBtn.classList.add('hidden');
+                        element.classList.remove('bg-yellow-50', 'border-yellow-200');
+                        element.classList.add('bg-green-50', 'border-green-200');
+                    }
+                }
+            });
         }
     </script>
 </body>

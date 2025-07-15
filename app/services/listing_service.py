@@ -398,3 +398,34 @@ class ListingService:
         
         self.db.add(version)
         return version
+    
+    async def update_agent_result(
+        self,
+        listing_id: int,
+        agent_name: str,
+        agent_result: Any
+    ) -> Optional[AgentResult]:
+        """
+        Actualiza o crea un resultado de agente para un listing específico
+        """
+        try:
+            # Crear nuevo resultado (simplificado por ahora)
+            # TODO: Implementar lógica completa de actualización
+            new_result = AgentResult(
+                listing_id=listing_id,
+                agent_name=agent_name,
+                status="success",
+                confidence=0.8,
+                processing_time=0.0,
+                agent_data=agent_result.data if hasattr(agent_result, 'data') else {},
+                notes=[],
+                recommendations=[]
+            )
+            
+            self.db.add(new_result)
+            await self.db.commit()
+            return new_result
+                
+        except Exception as e:
+            await self.db.rollback()
+            raise e

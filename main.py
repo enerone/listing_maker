@@ -18,6 +18,10 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
+# Crear directorio de imágenes si no existe
+IMAGES_DIR = "downloaded_images"
+os.makedirs(IMAGES_DIR, exist_ok=True)
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """
@@ -104,6 +108,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Montar directorio de imágenes como archivos estáticos
+app.mount("/downloaded_images", StaticFiles(directory=IMAGES_DIR), name="images")
 
 # Montar archivos estáticos del frontend
 if os.path.exists("frontend"):

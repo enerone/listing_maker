@@ -30,7 +30,7 @@ function addFeatureField() {
     
     // Crear div wrapper para el input y botón eliminar
     const wrapper = document.createElement('div');
-    wrapper.className = 'flex items-center space-x-2 feature-wrapper';
+    wrapper.className = 'flex items-center space-x-2 feature-item';
     
     const input = document.createElement('input');
     input.type = 'text';
@@ -985,22 +985,12 @@ function applySuggestionsStep1(suggestions) {
     if (suggestions.features && suggestions.features.length > 0) {
         const featuresContainer = document.getElementById('featuresContainer');
         if (featuresContainer) {
-            // Limpiar características existentes (excepto la primera)
-            const existingFeatures = featuresContainer.querySelectorAll('.feature-wrapper');
-            existingFeatures.forEach((feature, index) => {
-                if (index > 0) feature.remove();
-            });
+            // Limpiar TODAS las características existentes usando la clase consistente
+            const existingFeatures = featuresContainer.querySelectorAll('.feature-item');
+            existingFeatures.forEach(feature => feature.remove());
             
-            // Llenar primera característica
-            const firstInput = featuresContainer.querySelector('.feature-input');
-            if (firstInput) {
-                firstInput.value = suggestions.features[0];
-                firstInput.style.backgroundColor = '#f0f9ff';
-                setTimeout(() => firstInput.style.backgroundColor = '', 2000);
-            }
-            
-            // Agregar características adicionales
-            for (let i = 1; i < suggestions.features.length && i < 5; i++) {
+            // Agregar todas las características sugeridas
+            for (let i = 0; i < suggestions.features.length && i < 5; i++) {
                 addFeatureField();
                 const newInputs = featuresContainer.querySelectorAll('.feature-input');
                 const newInput = newInputs[newInputs.length - 1];

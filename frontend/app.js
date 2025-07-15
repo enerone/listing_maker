@@ -81,7 +81,7 @@ function addBoxContentField() {
     
     // Crear div wrapper para el input y botón eliminar
     const wrapper = document.createElement('div');
-    wrapper.className = 'flex items-center space-x-2 box-content-wrapper';
+    wrapper.className = 'flex items-center space-x-2 box-content-item';
     
     const input = document.createElement('input');
     input.type = 'text';
@@ -1087,22 +1087,12 @@ function applyToBoxContentFields(suggestions) {
     if (boxContents.length > 0) {
         const boxContentContainer = document.getElementById('boxContentsContainer');
         if (boxContentContainer) {
-            // Limpiar contenidos existentes (excepto el primero)
-            const existingContents = boxContentContainer.querySelectorAll('.box-content-wrapper');
-            existingContents.forEach((content, index) => {
-                if (index > 0) content.remove();
-            });
+            // Limpiar todos los contenidos existentes
+            const existingContents = boxContentContainer.querySelectorAll('.box-content-item');
+            existingContents.forEach(content => content.remove());
             
-            // Llenar primer contenido
-            const firstInput = boxContentContainer.querySelector('.box-content-input');
-            if (firstInput) {
-                firstInput.value = boxContents[0];
-                firstInput.style.backgroundColor = '#f0f9ff';
-                setTimeout(() => firstInput.style.backgroundColor = '', 2000);
-            }
-            
-            // Agregar contenidos adicionales
-            for (let i = 1; i < boxContents.length && i < 5; i++) {
+            // Agregar nuevos contenidos
+            for (let i = 0; i < boxContents.length && i < 5; i++) {
                 addBoxContentField();
                 const newInputs = boxContentContainer.querySelectorAll('.box-content-input');
                 const newInput = newInputs[newInputs.length - 1];

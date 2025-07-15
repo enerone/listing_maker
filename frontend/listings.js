@@ -491,16 +491,6 @@ function generateListingRow(listing) {
                             title="Ver detalles">
                         <i class="fas fa-eye"></i>
                     </button>
-                    <button onclick="editListing('${listingId}')" 
-                            class="bg-green-500 hover:bg-green-700 text-white p-1 rounded"
-                            title="Editar">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button onclick="duplicateListing('${listingId}')" 
-                            class="bg-purple-500 hover:bg-purple-700 text-white p-1 rounded"
-                            title="Duplicar">
-                        <i class="fas fa-copy"></i>
-                    </button>
                     <button onclick="deleteListing('${listingId}')" 
                             class="bg-red-500 hover:bg-red-700 text-white p-1 rounded"
                             title="Eliminar">
@@ -567,16 +557,6 @@ function generateListingCard(listing) {
                         title="Ver detalles">
                     <i class="fas fa-eye mr-1"></i>Ver
                 </button>
-                <button onclick="editListing('${listingId}')" 
-                        class="px-3 py-1 text-green-600 hover:text-green-900 hover:bg-green-50 rounded text-xs transition-colors"
-                        title="Editar">
-                    <i class="fas fa-edit mr-1"></i>Editar
-                </button>
-                <button onclick="duplicateListing('${listingId}')" 
-                        class="px-3 py-1 text-purple-600 hover:text-purple-900 hover:bg-purple-50 rounded text-xs transition-colors"
-                        title="Duplicar">
-                    <i class="fas fa-copy mr-1"></i>Duplicar
-                </button>
                 <button onclick="deleteListing('${listingId}')" 
                         class="px-3 py-1 text-red-600 hover:text-red-900 hover:bg-red-50 rounded text-xs transition-colors"
                         title="Eliminar">
@@ -616,43 +596,6 @@ function filterListings() {
 function viewListing(listingId) {
     console.log('👁️ View listing:', listingId);
     window.location.href = `listing-details.html?id=${listingId}`;
-}
-
-function editListing(listingId) {
-    console.log('✏️ Edit listing:', listingId);
-    window.location.href = `edit-listing.html?id=${listingId}`;
-}
-
-async function duplicateListing(listingId) {
-    console.log('📋 Duplicate listing:', listingId);
-    
-    if (!confirm('¿Quieres crear una copia de este listing?')) {
-        return;
-    }
-    
-    try {
-        const response = await fetch(`${API_BASE_URL}/api/listings/${listingId}/duplicate`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        });
-        
-        if (!response.ok) {
-            throw new Error(`Error ${response.status}: ${response.statusText}`);
-        }
-        
-        showToast('Listing duplicado exitosamente', 'success');
-        
-        // Reload listings after short delay
-        setTimeout(() => {
-            loadListings();
-        }, 1000);
-        
-    } catch (error) {
-        console.error('Error duplicating listing:', error);
-        showToast(`Error al duplicar listing: ${error.message}`, 'error');
-    }
 }
 
 async function deleteListing(listingId) {

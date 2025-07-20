@@ -1,0 +1,153 @@
+{
+  "success": true,
+  "session_id": "session_2",
+  "listing": {
+    "main_title": "Auriculares Auriculares Bluetooth Premium con Cancelación de Ruido Activa",
+    "bullet_points": [
+      "BENEFICIO 1: Alta Fidelidad y Sonido Impecable para Audiófilos - Ideal para auriculares bluetooth",
+      "BENEFICIO 2: Cancelación de Ruido Activa que Filtra el Ruido Ambiente - Ideal para cancelación ruido",
+      "BENEFICIO 3: Diseño Premium con Materiales de Calidad Superior - Ideal para alta fidelidad",
+      "BENEFICIO 4: Conectividad Inalámbrica y Duración de Batería Extendida - Ideal para inalámbricos",
+      "BENEFICIO 5: Compatibilidad con Todos los Dispositivos para Experiencias Sin Interrupciones - Ideal para premium"
+    ],
+    "product_description": "Descubre la perfección del sonido con nuestros Auriculares Auriculares Bluetooth Premium. Diseñados para audiófilos, estos auriculares inalámbricos ofrecen una experiencia de audio superior con cancelación de ruido activa que filtra el ruido ambiental, permitiéndote sumergirte en tu música sin distracciones. Con un diseño premium y materiales de alta calidad, estas son las mejores audífonos para profesionales y entusiastas del sonido. ¡Conectividad inalámbrica fiable y una duración de batería extendida aseguran que nunca te quedes sin música! Perfectos para uso en casa o en el trabajo, estos auriculares Bluetooth premium son la elección ideal para aquellos que buscan calidad y confiabilidad en cada momento.",
+    "backend_keywords": "Premium auriculares bluetooth, cancelación ruido, alta fidelidad, sonido, auriculares bluetooth, Professional auriculares bluetooth, premium, música, inalámbricos, audio",
+    "image_ai_prompts": {
+      "main_product": "Auriculares Auriculares Bluetooth Premium en primer plano sobre fondo blanco con iluminación profesional destacando detalles y calidad",
+      "contextual": "Profesional usando auriculares Auriculares Bluetooth Premium en un escritorio de oficina, escuchando música mientras trabaja sin distracciones",
+      "lifestyle": "Audiófilo disfrutando de una noche musical con auriculares Auriculares Bluetooth Premium en un ambiente hogareño relajado",
+      "detail": "Detalles del auricular Auriculares Bluetooth Premium mostrando texturas, materiales y acabados de alta calidad",
+      "comparative": "Comparación visual entre auriculares Auriculares Bluetooth Premium y modelos convencionales para destacar ventajas en cancelación de ruido y diseño"
+    },
+    "a_plus_content": {
+      "section_1": {
+        "title": "Experiencia Sonora inigualable",
+        "content": "Nuestros Auriculares Auriculares Bluetooth Premium ofrecen una experiencia sonora impecable, perfecta para audiófilos. Con alta fidelidad y cancelación de ruido activa, te sumergirás en tu música sin distracciones."
+      },
+      "section_2": {
+        "title": "Conectividad Fiable",
+        "content": "Disfruta de una conexión inalámbrica estable y duración de batería extendida. Con Auriculares Auriculares Bluetooth Premium, nunca te quedarás sin música en tus momentos más cruciales."
+      },
+      "section_3": {
+        "title": "Diseño Premium",
+        "content": "Construidos con materiales de alta calidad, estos auriculares son la elección perfecta para profesionales y entusiastas del sonido. Diseñados para durar, ofrecen un confort incomparable durante largas horas de uso."
+      }
+    }
+  },
+  "suggestions": [
+    {
+      "id": "title_length_opt",
+      "field": "title",
+      "type": "optimization",
+      "content": "Auriculares Auriculares Bluetooth Premium con Cancelación de Ruido Activa - Premium Quality for Electronics",
+      "reason": "Optimizar longitud del título para mejor SEO",
+      "agent": "auto_optimizer",
+      "priority": "medium"
+    },
+    {
+      "id": "bullet_0_enhance",
+      "field": "bullets",
+      "bullet_index": 0,
+      "type": "enhancement",
+      "content": "BENEFICIO 1: Alta Fidelidad y Sonido Impecable para Audiófilos - Ideal para auriculares bluetooth - Garantía de satisfacción incluida",
+      "reason": "Mejorar bullet point 1 con garantía de valor",
+      "agent": "auto_optimizer",
+      "priority": "low"
+    },
+    {
+      "id": "bullet_1_enhance",
+      "field": "bullets",
+      "bullet_index": 1,
+      "type": "enhancement",
+      "content": "BENEFICIO 2: Cancelación de Ruido Activa que Filtra el Ruido Ambiente - Ideal para cancelación ruido - Garantía de satisfacción incluida",
+      "reason": "Mejorar bullet point 2 con garantía de valor",
+      "agent": "auto_optimizer",
+      "priority": "low"
+    },
+    {
+      "id": "bullet_2_enhance",
+      "field": "bullets",
+      "bullet_index": 2,
+      "type": "enhancement",
+      "content": "BENEFICIO 3: Diseño Premium con Materiales de Calidad Superior - Ideal para alta fidelidad - Garantía de satisfacción incluida",
+      "reason": "Mejorar bullet point 3 con garantía de valor",
+      "agent": "auto_optimizer",
+      "priority": "low"
+    },
+    {
+      "id": "desc_cta",
+      "field": "description",
+      "type": "enhancement",
+      "content": "Descubre la perfección del sonido con nuestros Auriculares Auriculares Bluetooth Premium. Diseñados para audiófilos, estos auriculares inalámbricos ofrecen una experiencia de audio superior con cancelación de ruido activa que filtra el ruido ambiental, permitiéndote sumergirte en tu música sin distracciones. Con un diseño premium y materiales de alta calidad, estas son las mejores audífonos para profesionales y entusiastas del sonido. ¡Conectividad inalámbrica fiable y una duración de batería extendida aseguran que nunca te quedes sin música! Perfectos para uso en casa o en el trabajo, estos auriculares Bluetooth premium son la elección ideal para aquellos que buscan calidad y confiabilidad en cada momento.\n\n¡Ordena ahora y experimenta la diferencia! Tu satisfacción es nuestra garantía.",
+      "reason": "Añadir call-to-action para mejorar conversión",
+      "agent": "auto_optimizer",
+      "priority": "high"
+    }
+  ],
+  "generated_images": [
+    {
+      "filename": "Auriculares Bluetooth Premium con Cancelación de Ruido Activa_main_product_20250719_183039_37d02562.jpg",
+      "filepath": "generated_images/Auriculares Bluetooth Premium con Cancelación de Ruido Activa_main_product_20250719_183039_37d02562.jpg",
+      "url": "/generated_images/Auriculares Bluetooth Premium con Cancelación de Ruido Activa_main_product_20250719_183039_37d02562.jpg",
+      "prompt": "Auriculares Auriculares Bluetooth Premium en primer plano sobre fondo blanco con iluminación profesional destacando detalles y calidad, product photography, clean background, professional lighting, commercial quality, high quality, professional, detailed, 8k resolution, studio lighting",
+      "width": 512,
+      "height": 512,
+      "file_size": 55429,
+      "generated_at": "2025-07-19T18:30:39.022392",
+      "prompt_type": "main_product",
+      "original_prompt": "Auriculares Auriculares Bluetooth Premium en primer plano sobre fondo blanco con iluminación profesional destacando detalles y calidad"
+    },
+    {
+      "filename": "Auriculares Bluetooth Premium con Cancelación de Ruido Activa_contextual_20250719_183041_36e03b34.jpg",
+      "filepath": "generated_images/Auriculares Bluetooth Premium con Cancelación de Ruido Activa_contextual_20250719_183041_36e03b34.jpg",
+      "url": "/generated_images/Auriculares Bluetooth Premium con Cancelación de Ruido Activa_contextual_20250719_183041_36e03b34.jpg",
+      "prompt": "Profesional usando auriculares Auriculares Bluetooth Premium en un escritorio de oficina, escuchando música mientras trabaja sin distracciones, realistic environment, natural lighting, lifestyle photography, authentic setting, high quality, professional, detailed, 8k resolution, studio lighting",
+      "width": 512,
+      "height": 512,
+      "file_size": 66753,
+      "generated_at": "2025-07-19T18:30:41.529904",
+      "prompt_type": "contextual",
+      "original_prompt": "Profesional usando auriculares Auriculares Bluetooth Premium en un escritorio de oficina, escuchando música mientras trabaja sin distracciones"
+    },
+    {
+      "filename": "Auriculares Bluetooth Premium con Cancelación de Ruido Activa_lifestyle_20250719_183044_00129c2f.jpg",
+      "filepath": "generated_images/Auriculares Bluetooth Premium con Cancelación de Ruido Activa_lifestyle_20250719_183044_00129c2f.jpg",
+      "url": "/generated_images/Auriculares Bluetooth Premium con Cancelación de Ruido Activa_lifestyle_20250719_183044_00129c2f.jpg",
+      "prompt": "Audiófilo disfrutando de una noche musical con auriculares Auriculares Bluetooth Premium en un ambiente hogareño relajado, lifestyle photography, aspirational, professional models, high-end atmosphere, high quality, professional, detailed, 8k resolution, studio lighting",
+      "width": 512,
+      "height": 512,
+      "file_size": 42324,
+      "generated_at": "2025-07-19T18:30:44.035583",
+      "prompt_type": "lifestyle",
+      "original_prompt": "Audiófilo disfrutando de una noche musical con auriculares Auriculares Bluetooth Premium en un ambiente hogareño relajado"
+    },
+    {
+      "filename": "Auriculares Bluetooth Premium con Cancelación de Ruido Activa_detail_20250719_183046_adee485d.jpg",
+      "filepath": "generated_images/Auriculares Bluetooth Premium con Cancelación de Ruido Activa_detail_20250719_183046_adee485d.jpg",
+      "url": "/generated_images/Auriculares Bluetooth Premium con Cancelación de Ruido Activa_detail_20250719_183046_adee485d.jpg",
+      "prompt": "Detalles del auricular Auriculares Bluetooth Premium mostrando texturas, materiales y acabados de alta calidad, macro photography, texture detail, material showcase, close-up, premium quality, high quality, professional, detailed, 8k resolution, studio lighting",
+      "width": 512,
+      "height": 512,
+      "file_size": 56591,
+      "generated_at": "2025-07-19T18:30:46.542435",
+      "prompt_type": "detail",
+      "original_prompt": "Detalles del auricular Auriculares Bluetooth Premium mostrando texturas, materiales y acabados de alta calidad"
+    },
+    {
+      "filename": "Auriculares Bluetooth Premium con Cancelación de Ruido Activa_comparative_20250719_183049_2ac68e26.jpg",
+      "filepath": "generated_images/Auriculares Bluetooth Premium con Cancelación de Ruido Activa_comparative_20250719_183049_2ac68e26.jpg",
+      "url": "/generated_images/Auriculares Bluetooth Premium con Cancelación de Ruido Activa_comparative_20250719_183049_2ac68e26.jpg",
+      "prompt": "Comparación visual entre auriculares Auriculares Bluetooth Premium y modelos convencionales para destacar ventajas en cancelación de ruido y diseño, comparison shot, side by side, clear demonstration, infographic style, educational, high quality, professional, detailed, 8k resolution, studio lighting",
+      "width": 512,
+      "height": 512,
+      "file_size": 47756,
+      "generated_at": "2025-07-19T18:30:49.049537",
+      "prompt_type": "comparative",
+      "original_prompt": "Comparación visual entre auriculares Auriculares Bluetooth Premium y modelos convencionales para destacar ventajas en cancelación de ruido y diseño"
+    }
+  ],
+  "confidence": 0.8500000000000001,
+  "agent": "amazon_copywriter_agent",
+  "database_id": null,
+  "auto_saved": false
+}

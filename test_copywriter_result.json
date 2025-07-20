@@ -1,0 +1,48 @@
+{
+  "status": "success",
+  "confidence": 0.8500000000000001,
+  "agent_name": "Amazon Copywriter Pro",
+  "data": {
+    "main_title": "Smartwatch Smartwatch Premium Fitness Tracker con GPS y Batería de 7 Días",
+    "bullet_points": [
+      "- Monitor Cardíaco 24/7 para una Vida Mejor - Ideal para smartwatch",
+      "- GPS Integrado de Alta Precisión para Rutas de Ejercicio - Ideal para fitness tracker",
+      "- Resistente al Agua hasta 50m para Usos Diarios - Ideal para GPS",
+      "- Batería Duradera de 7 Días sin Recarga - Ideal para monitor cardíaco",
+      "- Reloj Inteligente con Pantalla Retina para Fitness - Ideal para resistente agua"
+    ],
+    "product_description": "Descubre la revolución en tecnología fitness con el Smartwatch Smartwatch Premium Fitness Tracker. Diseñado para personas activas, este reloj inteligente combina innovación y funcionalidad para mejorar tu estilo de vida. Con GPS integrado, puedes rastrear tus rutas de ejercicio con precisión. La batería de 7 días te libera de preocupaciones sobre recargas frecuentes. Resistente al agua hasta 50m, este smartwatch es perfecto para cualquier actividad. Monitorear tu salud nunca fue tan fácil gracias a su monitor cardíaco 24/7 y pantalla retina que ofrece una experiencia visual excepcional. ¡Adquiere ahora y transforma tu rutina de fitness con tecnología premium!",
+    "backend_keywords": "monitor salud, reloj inteligente, GPS, deportes, pulsera fitness, Premium smartwatch, fitness tracker, tracker actividad, resistente agua, monitor cardíaco",
+    "image_ai_prompts": {
+      "main_product": "Producto Smartwatch en primer plano sobre fondo blanco con iluminación profesional resaltando detalles y calidad",
+      "contextual": "Smartwatch siendo usado por una persona activa en un entorno hogareño para demostrar su funcionalidad diaria",
+      "lifestyle": "Personas del público objetivo usando Smartwatches en diferentes actividades de fitness, reflejando estilo de vida saludable y positivo",
+      "detail": "Primer plano del Smartwatch mostrando texturas, materiales y acabados para destacar calidad y diseño",
+      "comparative": "Comparación visual entre un Smartwatch y un reloj tradicional en uso, ilustrando ventaja clave de la tecnología inteligente"
+    },
+    "a_plus_content": {
+      "section_1": {
+        "title": "Transforma tu Rutina de Ejercicio con el Smartwatch Premium",
+        "content": "Elige una tecnología que te acompañe en cada paso. Con su GPS integrado, rastrea tus rutas de ejercicio con precisión y confianza. Monitorear tu salud nunca fue tan fácil gracias a su monitor cardíaco 24/7."
+      },
+      "section_2": {
+        "title": "Batería Duradera para Libertad",
+        "content": "¡Adiós a las recargas frecuentes! Con una batería de 7 días, este smartwatch te libera de preocupaciones. Ahora puedes concentrarte en tu rutina de fitness sin interrupciones."
+      },
+      "section_3": {
+        "title": "Resistente al Agua hasta 50m",
+        "content": "Este reloj inteligente es perfecto para cualquier actividad. Resistente al agua hasta 50 metros, puedes usarlo con confianza en el gimnasio o durante tu rutina diaria de fitness."
+      }
+    }
+  },
+  "notes": [
+    "Contenido optimizado para Amazon",
+    "Keywords integradas naturalmente",
+    "Enfoque en beneficios del cliente"
+  ],
+  "recommendations": [
+    "Revisar keywords principales",
+    "Validar contenido con target customer",
+    "Considerar A/B testing"
+  ]
+}

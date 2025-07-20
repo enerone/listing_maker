@@ -246,6 +246,7 @@ class ListingOrchestrator:
                 search_terms=search_terms,
                 backend_keywords=backend_keywords,
                 images_order=seo_data.get("image_strategy", {}).get("secondary_images_plan", [])[:7],
+                image_ai_prompts=copywriter_data.get("image_ai_prompts", {}),
                 a_plus_content=seo_data.get("a_plus_content_strategy", {}).get("visual_storytelling"),
                 
                 # Metadatos

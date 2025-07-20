@@ -955,6 +955,78 @@ async function showListingModal(listingId) {
                     </div>
                 </div>
                 
+                <!-- Image AI Prompts -->
+                <div>
+                    <h4 class="font-semibold text-gray-900 mb-3">🎨 Prompts de Imágenes IA</h4>
+                    <div class="space-y-3">
+                        ${(() => {
+                            // Debug logging
+                            console.log('Modal Debug - listing.image_ai_prompts:', listing.image_ai_prompts);
+                            console.log('Modal Debug - agent_results length:', data.agent_results ? data.agent_results.length : 0);
+                            
+                            // First try to get prompts from the main listing field
+                            let prompts = listing.image_ai_prompts;
+                            
+                            // If not available, try to get from agent_results
+                            if (!prompts && data.agent_results && data.agent_results.length > 0) {
+                                console.log('Modal Debug - Looking for prompts in agent_results...');
+                                
+                                const agentResult = data.agent_results.find(result => 
+                                    result.agent_name === "amazon_copywriter_agent" && 
+                                    result.agent_data && 
+                                    result.agent_data.image_ai_prompts
+                                );
+                                
+                                console.log('Modal Debug - Found agent result:', agentResult ? 'Yes' : 'No');
+                                
+                                if (agentResult) {
+                                    prompts = agentResult.agent_data.image_ai_prompts;
+                                    console.log('Modal Debug - Extracted prompts:', prompts);
+                                }
+                            }
+                            
+                            if (prompts) {
+                                try {
+                                    // Handle different prompt formats
+                                    let parsedPrompts;
+                                    if (typeof prompts === 'string') {
+                                        try {
+                                            parsedPrompts = JSON.parse(prompts);
+                                        } catch (e) {
+                                            console.error('Error parsing prompts JSON:', e);
+                                            parsedPrompts = {};
+                                        }
+                                    } else if (typeof prompts === 'object' && prompts !== null) {
+                                        parsedPrompts = prompts;
+                                    } else {
+                                        parsedPrompts = {};
+                                    }
+                                    
+                                    const promptTypes = {
+                                        'main_product': '📸 Producto Principal',
+                                        'contextual': '🌟 Contextual',
+                                        'lifestyle': '🏠 Lifestyle',
+                                        'detail': '🔍 Detalle',
+                                        'comparative': '⚖️ Comparativo'
+                                    };
+                                    
+                                    return Object.entries(parsedPrompts).map(([type, prompt]) => `
+                                        <div class="bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 p-3 rounded-lg">
+                                            <h5 class="font-medium text-purple-900 mb-2">${promptTypes[type] || type}</h5>
+                                            <p class="text-gray-700 text-sm bg-white p-2 rounded border">${prompt || 'N/A'}</p>
+                                        </div>
+                                    `).join('');
+                                } catch (e) {
+                                    console.error('Error parsing image prompts:', e);
+                                    return '<p class="text-gray-500 italic">Error al mostrar prompts de imágenes</p>';
+                                }
+                            } else {
+                                return '<p class="text-gray-500 italic">No hay prompts de imágenes generados</p>';
+                            }
+                        })()}
+                    </div>
+                </div>
+                
                 <!-- Metadata -->
                 <div class="bg-gray-50 p-4 rounded-lg">
                     <h4 class="font-semibold text-gray-900 mb-3">Metadatos</h4>

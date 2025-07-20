@@ -109,6 +109,7 @@ class ProcessedListing(BaseModel):
     search_terms: List[str]
     backend_keywords: List[str]
     images_order: List[str]
+    image_ai_prompts: Optional[Dict[str, str]] = {}
     a_plus_content: Optional[str] = None
     
     # Metadatos

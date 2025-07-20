@@ -182,9 +182,9 @@ async function loadListings() {
     showLoadingState();
     
     try {
-        console.log('📡 Fetching from:', `${API_BASE_URL}/api/listings/`);
+        console.log('📡 Fetching from:', `${API_BASE_URL}/listings/`);
         
-        const response = await fetch(`${API_BASE_URL}/api/listings/`, {
+        const response = await fetch(`${API_BASE_URL}/listings/`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json'
@@ -515,6 +515,11 @@ function generateListingRow(listing) {
                             title="Ver detalles">
                         <i class="fas fa-eye"></i>
                     </button>
+                    <button onclick="generateAIImages('${listingId}')" 
+                            class="bg-purple-500 hover:bg-purple-700 text-white p-1 rounded"
+                            title="Generar imágenes IA">
+                        <i class="fas fa-magic"></i>
+                    </button>
                     <button onclick="deleteListing('${listingId}')" 
                             class="bg-red-500 hover:bg-red-700 text-white p-1 rounded"
                             title="Eliminar">
@@ -581,6 +586,11 @@ function generateListingCard(listing) {
                         title="Ver detalles">
                     <i class="fas fa-eye mr-1"></i>Ver
                 </button>
+                <button onclick="generateAIImages('${listingId}')" 
+                        class="px-3 py-1 text-purple-600 hover:text-purple-900 hover:bg-purple-50 rounded text-xs transition-colors"
+                        title="Generar imágenes IA">
+                    <i class="fas fa-magic mr-1"></i>IA
+                </button>
                 <button onclick="deleteListing('${listingId}')" 
                         class="px-3 py-1 text-red-600 hover:text-red-900 hover:bg-red-50 rounded text-xs transition-colors"
                         title="Eliminar">
@@ -640,7 +650,7 @@ function filterListings() {
 // Action functions
 function viewListing(listingId) {
     console.log('👁️ View listing:', listingId);
-    window.location.href = `listing-details.html?id=${listingId}`;
+    showListingModal(listingId);
 }
 
 async function deleteListing(listingId) {
@@ -651,7 +661,7 @@ async function deleteListing(listingId) {
     }
     
     try {
-        const response = await fetch(`${API_BASE_URL}/api/listings/${listingId}`, {
+        const response = await fetch(`${API_BASE_URL}/listings/${listingId}`, {
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json'
@@ -825,4 +835,479 @@ function formatDateCompact(dateString) {
         console.error('Error formatting date:', error);
         return 'N/A';
     }
+}
+
+// Modal functions
+async function showListingModal(listingId) {
+    console.log('📝 Showing listing modal for ID:', listingId);
+    
+    try {
+        // Show modal immediately with loading state
+        const modal = document.getElementById('listingModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalContent = document.getElementById('modalContent');
+        
+        modalTitle.textContent = 'Cargando detalles...';
+        modalContent.innerHTML = `
+            <div class="flex items-center justify-center py-8">
+                <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                <span class="ml-3 text-gray-600">Cargando detalles del listing...</span>
+            </div>
+        `;
+        modal.classList.remove('hidden');
+        
+        // Fetch listing details
+        const response = await fetch(`${API_BASE_URL}/listings/${listingId}`);
+        
+        if (!response.ok) {
+            throw new Error(`Error ${response.status}: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        const listing = data.listing;
+        
+        // Update modal with listing details
+        modalTitle.textContent = `${listing.product_name || 'Listing'} - Detalles`;
+        
+        modalContent.innerHTML = `
+            <div class="space-y-6">
+                <!-- Basic Info -->
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <h4 class="font-semibold text-gray-900 mb-3">Información Básica</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="text-sm font-medium text-gray-500">Producto:</label>
+                            <p class="text-gray-900">${listing.product_name || 'N/A'}</p>
+                        </div>
+                        <div>
+                            <label class="text-sm font-medium text-gray-500">Categoría:</label>
+                            <p class="text-gray-900">${listing.category || 'N/A'}</p>
+                        </div>
+                        <div>
+                            <label class="text-sm font-medium text-gray-500">Precio Objetivo:</label>
+                            <p class="text-gray-900">$${listing.target_price || 'N/A'}</p>
+                        </div>
+                        <div>
+                            <label class="text-sm font-medium text-gray-500">Estado:</label>
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadgeClass(listing.status)}">
+                                ${listing.status || 'N/A'}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Title -->
+                <div>
+                    <h4 class="font-semibold text-gray-900 mb-2">Título</h4>
+                    <p class="text-gray-700 bg-white border p-3 rounded">${listing.title || 'N/A'}</p>
+                </div>
+                
+                <!-- Bullet Points -->
+                <div>
+                    <h4 class="font-semibold text-gray-900 mb-2">Puntos Clave</h4>
+                    <div class="bg-white border p-3 rounded">
+                        ${listing.bullet_points ? 
+                            (typeof listing.bullet_points === 'string' ? 
+                                listing.bullet_points.split('\n').map(point => `<p class="text-gray-700 mb-1">• ${point.trim()}</p>`).join('') :
+                                Array.isArray(listing.bullet_points) ?
+                                    listing.bullet_points.map(point => `<p class="text-gray-700 mb-1">• ${point}</p>`).join('') :
+                                    'N/A'
+                            ) : 'N/A'
+                        }
+                    </div>
+                </div>
+                
+                <!-- Description -->
+                <div>
+                    <h4 class="font-semibold text-gray-900 mb-2">Descripción</h4>
+                    <div class="bg-white border p-3 rounded max-h-48 overflow-y-auto">
+                        <p class="text-gray-700 whitespace-pre-wrap">${listing.description || 'N/A'}</p>
+                    </div>
+                </div>
+                
+                <!-- Keywords -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <h4 class="font-semibold text-gray-900 mb-2">Términos de Búsqueda</h4>
+                        <div class="bg-white border p-3 rounded">
+                            ${listing.search_terms ? 
+                                (typeof listing.search_terms === 'string' ? 
+                                    listing.search_terms.split(',').map(term => `<span class="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded mr-1 mb-1">${term.trim()}</span>`).join('') :
+                                    Array.isArray(listing.search_terms) ?
+                                        listing.search_terms.map(term => `<span class="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded mr-1 mb-1">${term}</span>`).join('') :
+                                        'N/A'
+                                ) : 'N/A'
+                            }
+                        </div>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-gray-900 mb-2">Keywords Backend</h4>
+                        <div class="bg-white border p-3 rounded">
+                            ${listing.backend_keywords ? 
+                                (typeof listing.backend_keywords === 'string' ? 
+                                    listing.backend_keywords.split(',').map(keyword => `<span class="inline-block bg-green-100 text-green-800 text-xs px-2 py-1 rounded mr-1 mb-1">${keyword.trim()}</span>`).join('') :
+                                    Array.isArray(listing.backend_keywords) ?
+                                        listing.backend_keywords.map(keyword => `<span class="inline-block bg-green-100 text-green-800 text-xs px-2 py-1 rounded mr-1 mb-1">${keyword}</span>`).join('') :
+                                        'N/A'
+                                ) : 'N/A'
+                            }
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Metadata -->
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <h4 class="font-semibold text-gray-900 mb-3">Metadatos</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                        <div>
+                            <label class="text-gray-500">Score de Confianza:</label>
+                            <p class="text-gray-900">${listing.confidence_score || 'N/A'}</p>
+                        </div>
+                        <div>
+                            <label class="text-gray-500">Versión:</label>
+                            <p class="text-gray-900">${listing.version || 'N/A'}</p>
+                        </div>
+                        <div>
+                            <label class="text-gray-500">Fecha de Creación:</label>
+                            <p class="text-gray-900">${listing.created_at ? formatDate(listing.created_at) : 'N/A'}</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="flex justify-end space-x-3 pt-4 border-t">
+                    <button onclick="closeModal()" class="px-4 py-2 text-gray-600 hover:text-gray-800 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                        Cerrar
+                    </button>
+                    <button onclick="editListing(${listingId})" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">
+                        <i class="fas fa-edit mr-2"></i>Editar
+                    </button>
+                </div>
+            </div>
+        `;
+        
+    } catch (error) {
+        console.error('Error loading listing details:', error);
+        showToast(`Error al cargar detalles: ${error.message}`, 'error');
+        
+        // Show error in modal
+        const modalContent = document.getElementById('modalContent');
+        if (modalContent) {
+            modalContent.innerHTML = `
+                <div class="text-center py-8">
+                    <i class="fas fa-exclamation-triangle text-4xl text-red-400 mb-4"></i>
+                    <h3 class="text-lg font-medium text-gray-900 mb-2">Error al cargar detalles</h3>
+                    <p class="text-gray-600 mb-4">${error.message}</p>
+                    <button onclick="closeModal()" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors">
+                        Cerrar
+                    </button>
+                </div>
+            `;
+        }
+    }
+}
+
+function closeModal() {
+    console.log('❌ Closing modal');
+    const modal = document.getElementById('listingModal');
+    modal.classList.add('hidden');
+}
+
+function editListing(listingId) {
+    console.log('✏️ Edit listing:', listingId);
+    showToast('Funcionalidad de edición en desarrollo', 'info');
+    // TODO: Implement edit functionality
+    // This could redirect to the generator with pre-filled data
+}
+
+function getStatusBadgeClass(status) {
+    switch(status) {
+        case 'published': return 'bg-green-100 text-green-800';
+        case 'draft': return 'bg-yellow-100 text-yellow-800';
+        case 'archived': return 'bg-gray-100 text-gray-800';
+        default: return 'bg-blue-100 text-blue-800';
+    }
+}
+
+// === GENERACIÓN DE IMÁGENES IA ===
+
+async function generateAIImages(listingId) {
+    console.log('🎨 Generate AI Images for listing:', listingId);
+    
+    // Verificar que el listing ID sea válido
+    if (!listingId || listingId === 'unknown') {
+        showToast('ID de listing inválido', 'error');
+        return;
+    }
+    
+    try {
+        // Mostrar modal de carga
+        showAIImageGenerationModal(listingId);
+        
+        // Hacer la petición para generar imágenes
+        const response = await fetch(`${API_BASE_URL}/listings/${listingId}/generate-ai-images`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok && data.success) {
+            showToast(`✅ ${data.message}`, 'success');
+            // Actualizar el modal con las imágenes generadas
+            updateAIImageGenerationModal(data);
+        } else {
+            const errorMsg = data.detail || data.message || 'Error generando imágenes IA';
+            showToast(`❌ ${errorMsg}`, 'error');
+            updateAIImageGenerationModal({ error: errorMsg });
+        }
+        
+    } catch (error) {
+        console.error('Error generating AI images:', error);
+        const errorMsg = 'Error de conexión al generar imágenes IA';
+        showToast(`❌ ${errorMsg}`, 'error');
+        updateAIImageGenerationModal({ error: errorMsg });
+    }
+}
+
+function showAIImageGenerationModal(listingId) {
+    const modal = document.getElementById('aiImageModal');
+    if (!modal) {
+        // Crear el modal si no existe
+        createAIImageModal();
+    }
+    
+    const modalContent = document.getElementById('aiImageModalContent');
+    const listing = allListings.find(l => l.id == listingId);
+    const productName = listing ? listing.product_name : `Listing ${listingId}`;
+    
+    modalContent.innerHTML = `
+        <div class="text-center py-8">
+            <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-purple-100 mb-4">
+                <i class="fas fa-magic text-2xl text-purple-600 animate-pulse"></i>
+            </div>
+            <h3 class="text-xl font-semibold text-gray-900 mb-2">Generando Imágenes IA</h3>
+            <p class="text-gray-600 mb-4">Para: <strong>${productName}</strong></p>
+            <div class="flex items-center justify-center space-x-2 text-sm text-gray-500">
+                <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-600"></div>
+                <span>Stable Diffusion está creando imágenes únicas...</span>
+            </div>
+            <div class="mt-4 text-xs text-gray-400">
+                Este proceso puede tomar 1-2 minutos
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('aiImageModal').classList.remove('hidden');
+}
+
+function updateAIImageGenerationModal(data) {
+    const modalContent = document.getElementById('aiImageModalContent');
+    
+    if (data.error) {
+        modalContent.innerHTML = `
+            <div class="text-center py-8">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-100 mb-4">
+                    <i class="fas fa-exclamation-triangle text-2xl text-red-600"></i>
+                </div>
+                <h3 class="text-xl font-semibold text-gray-900 mb-2">Error en Generación</h3>
+                <p class="text-gray-600 mb-6">${data.error}</p>
+                <button onclick="closeAIImageModal()" class="bg-gray-600 hover:bg-gray-700 text-white px-6 py-2 rounded-lg transition-colors">
+                    Cerrar
+                </button>
+            </div>
+        `;
+        return;
+    }
+    
+    const images = data.generated_images || [];
+    
+    modalContent.innerHTML = `
+        <div class="text-center mb-6">
+            <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 mb-4">
+                <i class="fas fa-check text-2xl text-green-600"></i>
+            </div>
+            <h3 class="text-xl font-semibold text-gray-900 mb-2">¡Imágenes Generadas!</h3>
+            <p class="text-gray-600">Se crearon <strong>${images.length} imágenes</strong> para <strong>${data.product_name}</strong></p>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            ${images.map(img => `
+                <div class="border rounded-lg overflow-hidden">
+                    <img src="${img.url}" alt="${img.prompt_type}" class="w-full h-48 object-cover" 
+                         onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjIwMCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiNGM0Y0RjYiLz48dGV4dCB4PSI1MCUiIHk9IjUwJSIgZG9taW5hbnQtYmFzZWxpbmU9Im1pZGRsZSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0iIzlDQTNBRiI+SW1hZ2VuIE5vIERpc3BvbmlibGU8L3RleHQ+PC9zdmc+'">
+                    <div class="p-3">
+                        <h4 class="font-semibold text-sm text-gray-900 mb-1">${formatPromptType(img.prompt_type)}</h4>
+                        <p class="text-xs text-gray-600 mb-2">${img.dimensions} • ${formatFileSize(img.file_size)}</p>
+                        <button onclick="downloadImage('${img.url}', '${img.filename}')" 
+                                class="w-full bg-purple-500 hover:bg-purple-700 text-white text-xs py-1 px-2 rounded transition-colors">
+                            <i class="fas fa-download mr-1"></i>Descargar
+                        </button>
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+        
+        <div class="flex justify-center space-x-3">
+            <button onclick="viewImageGallery()" class="bg-purple-500 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors">
+                <i class="fas fa-images mr-2"></i>Ver Galería Completa
+            </button>
+            <button onclick="closeAIImageModal()" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors">
+                Cerrar
+            </button>
+        </div>
+    `;
+}
+
+function createAIImageModal() {
+    const modal = document.createElement('div');
+    modal.id = 'aiImageModal';
+    modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden';
+    modal.innerHTML = `
+        <div class="bg-white rounded-lg max-w-4xl w-full mx-4 max-h-90vh overflow-y-auto">
+            <div class="p-6" id="aiImageModalContent">
+                <!-- Content will be injected here -->
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
+function closeAIImageModal() {
+    const modal = document.getElementById('aiImageModal');
+    if (modal) {
+        modal.classList.add('hidden');
+    }
+}
+
+function formatPromptType(type) {
+    const typeMap = {
+        'main_product': 'Producto Principal',
+        'contextual': 'Contextual',
+        'lifestyle': 'Estilo de Vida',
+        'detail': 'Detalle',
+        'comparative': 'Comparativo'
+    };
+    return typeMap[type] || type;
+}
+
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+function downloadImage(url, filename) {
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+async function viewImageGallery() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/listings/ai-images/gallery`);
+        const data = await response.json();
+        
+        if (response.ok) {
+            closeAIImageModal();
+            showImageGalleryModal(data);
+        } else {
+            showToast('Error cargando galería de imágenes', 'error');
+        }
+    } catch (error) {
+        console.error('Error loading image gallery:', error);
+        showToast('Error de conexión al cargar galería', 'error');
+    }
+}
+
+function showImageGalleryModal(data) {
+    const images = data.images || [];
+    
+    let modal = document.getElementById('imageGalleryModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'imageGalleryModal';
+        modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden';
+        modal.innerHTML = `
+            <div class="bg-white rounded-lg max-w-6xl w-full mx-4 max-h-90vh overflow-y-auto">
+                <div class="p-6" id="imageGalleryContent">
+                    <!-- Content will be injected here -->
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+    
+    const content = document.getElementById('imageGalleryContent');
+    content.innerHTML = `
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-xl font-semibold text-gray-900">Galería de Imágenes IA</h3>
+            <button onclick="closeImageGalleryModal()" class="text-gray-400 hover:text-gray-600">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        
+        <div class="mb-4 text-sm text-gray-600">
+            Mostrando ${images.length} de ${data.total_images} imágenes generadas
+        </div>
+        
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            ${images.map(img => `
+                <div class="border rounded-lg overflow-hidden hover:shadow-lg transition-shadow">
+                    <img src="${img.url}" alt="Imagen IA" class="w-full h-32 object-cover" 
+                         onclick="showFullImage('${img.url}')"
+                         onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjIwMCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiNGM0Y0RjYiLz48dGV4dCB4PSI1MCUiIHk9IjUwJSIgZG9taW5hbnQtYmFzZWxpbmU9Im1pZGRsZSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0iIzlDQTNBRiI+SW1hZ2VuIE5vIERpc3BvbmlibGU8L3RleHQ+PC9zdmc+'">
+                    <div class="p-2">
+                        <p class="text-xs text-gray-600 mb-1">${formatFileSize(img.file_size)}</p>
+                        <button onclick="downloadImage('${img.url}', '${img.filename}')" 
+                                class="w-full bg-purple-500 hover:bg-purple-700 text-white text-xs py-1 px-2 rounded transition-colors">
+                            <i class="fas fa-download mr-1"></i>Descargar
+                        </button>
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+        
+        <div class="flex justify-center mt-6">
+            <button onclick="closeImageGalleryModal()" class="bg-gray-600 hover:bg-gray-700 text-white px-6 py-2 rounded-lg transition-colors">
+                Cerrar
+            </button>
+        </div>
+    `;
+    
+    modal.classList.remove('hidden');
+}
+
+function closeImageGalleryModal() {
+    const modal = document.getElementById('imageGalleryModal');
+    if (modal) {
+        modal.classList.add('hidden');
+    }
+}
+
+function showFullImage(url) {
+    // Simple full-screen image viewer
+    const overlay = document.createElement('div');
+    overlay.className = 'fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50';
+    overlay.innerHTML = `
+        <div class="max-w-4xl max-h-4xl p-4">
+            <img src="${url}" class="max-w-full max-h-full object-contain" onclick="document.body.removeChild(this.closest('.fixed'))">
+            <button onclick="document.body.removeChild(this.closest('.fixed'))" class="absolute top-4 right-4 text-white text-2xl hover:text-gray-300">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    `;
+    overlay.onclick = (e) => {
+        if (e.target === overlay) {
+            document.body.removeChild(overlay);
+        }
+    };
+    document.body.appendChild(overlay);
 }

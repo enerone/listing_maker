@@ -27,6 +27,7 @@ class Listing(Base):
     search_terms = Column(JSON, nullable=False)  # Lista de strings
     backend_keywords = Column(JSON, nullable=False)  # Lista de strings
     images_order = Column(JSON, nullable=True)  # Lista de URLs/paths de imágenes
+    image_ai_prompts = Column(JSON, nullable=True)  # Prompts para generación de imágenes IA
     a_plus_content = Column(Text, nullable=True)
     
     # Metadatos del procesamiento

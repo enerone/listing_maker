@@ -38,6 +38,7 @@ class ListingService:
             search_terms=processed_listing.search_terms,
             backend_keywords=processed_listing.backend_keywords,
             images_order=processed_listing.images_order,
+            image_ai_prompts=processed_listing.image_ai_prompts,
             a_plus_content=processed_listing.a_plus_content,
             confidence_score=processed_listing.confidence_score,
             processing_notes=processed_listing.processing_notes,

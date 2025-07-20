@@ -38,10 +38,11 @@ class OllamaService:
                     messages=messages,
                     options={
                         "temperature": temperature,
-                        "num_predict": max_tokens or -1
+                        "num_predict": max_tokens or 2000,  # Limitar tokens para evitar respuestas muy largas
+                        "stop": ["```", "\n\n---", "END_RESPONSE"]  # Añadir stop tokens
                     }
                 ),
-                timeout=60.0  # Timeout de 60 segundos
+                timeout=30.0  # Reducir timeout a 30 segundos
             )
             
             processing_time = (datetime.now() - start_time).total_seconds()

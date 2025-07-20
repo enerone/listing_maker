@@ -3,7 +3,6 @@ from typing import Dict, Any, List
 import logging
 from datetime import datetime
 
-from .base_agent import BaseAgent
 from .product_analysis_agent import ProductAnalysisAgent
 from .customer_research_agent import CustomerResearchAgent
 from .value_proposition_agent import ValuePropositionAgent
@@ -16,6 +15,7 @@ from .competitive_analysis_agent import CompetitiveAnalysisAgent
 from .social_content_agent import SocialContentAgent
 from .marketing_review_agent import MarketingReviewAgent
 from .image_search_agent import ImageSearchAgent
+from .amazon_copywriter_agent import AmazonCopywriterAgent
 from ..models import (
     ProductInput, ProcessedListing, AgentResponse,
     CustomerProfile, TechnicalSpecs, BoxContents, 
@@ -43,6 +43,7 @@ class ListingOrchestrator:
             "social_content": SocialContentAgent(),
             "marketing_review": MarketingReviewAgent(),
             "image_search": ImageSearchAgent(),
+            "amazon_copywriter": AmazonCopywriterAgent(),
         }
         self._last_agent_responses = {}  # Almacenar última ejecución
         
@@ -67,6 +68,7 @@ class ListingOrchestrator:
                 "competitive_analysis": self.agents["competitive_analysis"].process(product_input),
                 "social_content": self.agents["social_content"].process(product_input),
                 "product_description": self.agents["product_description"].process(product_input),
+                "amazon_copywriter": self.agents["amazon_copywriter"].process(product_input),
             }
             
             all_results = await asyncio.wait_for(
@@ -150,8 +152,9 @@ class ListingOrchestrator:
             content_data = safe_get_data("content")
             pricing_data = safe_get_data("pricing_strategy")
             seo_data = safe_get_data("seo_visual")
-            competitive_data = safe_get_data("competitive_analysis")
-            social_data = safe_get_data("social_content")
+            # competitive_data = safe_get_data("competitive_analysis")  # Para uso futuro
+            # social_data = safe_get_data("social_content")  # Para uso futuro
+            copywriter_data = safe_get_data("amazon_copywriter")
             
             # Crear objetos Pydantic con datos por defecto si no están disponibles
             customer_profile = CustomerProfile(
@@ -205,14 +208,14 @@ class ListingOrchestrator:
                 video_urls=[]
             )
             
-            # Generar título optimizado
-            title = await self._generate_optimized_title(product_input, product_analysis_data)
+            # Generar título optimizado (usar copywriter si está disponible)
+            title = self._get_optimized_title(product_input, product_analysis_data, copywriter_data)
             
-            # Generar bullet points
-            bullet_points = await self._generate_bullet_points(product_input, value_prop_data, customer_data)
+            # Generar bullet points (usar copywriter si está disponible)
+            bullet_points = self._get_optimized_bullet_points(product_input, value_prop_data, customer_data, copywriter_data)
             
-            # Generar descripción
-            description = await self._generate_description(product_input, agent_responses)
+            # Generar descripción (usar copywriter si está disponible)
+            description = self._get_optimized_description(product_input, agent_responses, copywriter_data)
             
             # Recolectar recomendaciones de todos los agentes
             all_recommendations = []
@@ -257,31 +260,79 @@ class ListingOrchestrator:
             logger.error(f"Error generando listing final: {str(e)}")
             raise
     
-    async def _generate_optimized_title(self, product_input: ProductInput, product_analysis: Dict) -> str:
+    def _get_optimized_title(self, product_input: ProductInput, product_analysis_data: Dict, copywriter_data: Dict) -> str:
         """
-        Genera un título optimizado para Amazon
+        Genera un título optimizado usando el agente de Amazon Copywriter si está disponible
         """
         try:
-            optimized_name = product_analysis.get("product_name_analysis", {}).get("optimized_name", product_input.product_name)
+            # Si el copywriter generó un título, usarlo
+            if copywriter_data and copywriter_data.get("main_title"):
+                title = copywriter_data["main_title"]
+                logger.info(f"Usando título del Amazon Copywriter: {title[:50]}...")
+                return title
             
-            # Estructura básica: Marca + Nombre + Características clave + Variante principal
+            # Fallback: generar título básico
+            logger.info("Generando título básico (copywriter no disponible)")
+            return self._generate_basic_title(product_input, product_analysis_data)
+            
+        except Exception as e:
+            logger.warning(f"Error obteniendo título optimizado: {str(e)}")
+            return self._generate_basic_title(product_input, product_analysis_data)
+    
+    def _get_optimized_bullet_points(self, product_input: ProductInput, value_prop_data: Dict, customer_data: Dict, copywriter_data: Dict) -> List[str]:
+        """
+        Genera bullet points optimizados usando el agente de Amazon Copywriter si está disponible
+        """
+        try:
+            # Si el copywriter generó bullet points, usarlos
+            if copywriter_data and copywriter_data.get("bullet_points"):
+                bullet_points = copywriter_data["bullet_points"]
+                if isinstance(bullet_points, list) and len(bullet_points) > 0:
+                    logger.info(f"Usando {len(bullet_points)} bullet points del Amazon Copywriter")
+                    return bullet_points[:5]  # Máximo 5 bullet points
+            
+            # Fallback: generar bullet points básicos
+            logger.info("Generando bullet points básicos (copywriter no disponible)")
+            return self._generate_basic_bullet_points(product_input, value_prop_data, customer_data)
+            
+        except Exception as e:
+            logger.warning(f"Error obteniendo bullet points optimizados: {str(e)}")
+            return self._generate_basic_bullet_points(product_input, value_prop_data, customer_data)
+    
+    def _get_optimized_description(self, product_input: ProductInput, agent_responses: Dict, copywriter_data: Dict) -> str:
+        """
+        Genera descripción optimizada usando el agente de Amazon Copywriter si está disponible
+        """
+        try:
+            # Si el copywriter generó una descripción, usarla
+            if copywriter_data and copywriter_data.get("product_description"):
+                description = copywriter_data["product_description"]
+                logger.info(f"Usando descripción del Amazon Copywriter ({len(description)} caracteres)")
+                return description
+            
+            # Fallback: generar descripción básica
+            logger.info("Generando descripción básica (copywriter no disponible)")
+            return self._generate_basic_description(product_input, agent_responses)
+            
+        except Exception as e:
+            logger.warning(f"Error obteniendo descripción optimizada: {str(e)}")
+            return self._generate_basic_description(product_input, agent_responses)
+    
+    def _generate_basic_title(self, product_input: ProductInput, product_analysis_data: Dict) -> str:
+        """
+        Genera un título básico cuando el copywriter no está disponible
+        """
+        try:
+            # Usar el análisis del producto si está disponible
+            optimized_name = product_analysis_data.get("product_name_analysis", {}).get("optimized_name", product_input.product_name)
+            
+            # Estructura básica: Nombre + Características clave
             title_parts = [optimized_name]
             
             # Agregar características clave si están disponibles
             if product_input.competitive_advantages:
                 key_features = product_input.competitive_advantages[:2]  # Máximo 2 características
                 title_parts.extend(key_features)
-            
-            # Agregar variante principal si existe
-            if product_input.variants:
-                main_variant = product_input.variants[0]
-                variant_info = []
-                if main_variant.color:
-                    variant_info.append(main_variant.color)
-                if main_variant.size:
-                    variant_info.append(main_variant.size)
-                if variant_info:
-                    title_parts.append(" ".join(variant_info))
             
             title = " - ".join(title_parts)
             
@@ -292,119 +343,107 @@ class ListingOrchestrator:
             return title
             
         except Exception as e:
-            logger.warning(f"Error generando título optimizado: {str(e)}")
+            logger.warning(f"Error generando título básico: {str(e)}")
             return product_input.product_name
     
-    async def _generate_bullet_points(
-        self, 
-        product_input: ProductInput, 
-        value_prop_data: Dict, 
-        customer_data: Dict
-    ) -> List[str]:
+    def _generate_basic_bullet_points(self, product_input: ProductInput, value_prop_data: Dict, customer_data: Dict) -> List[str]:
         """
-        Genera bullet points optimizados
+        Genera bullet points básicos cuando el copywriter no está disponible
         """
         try:
             bullet_points = []
             
-            # Bullet 1: Propuesta de valor principal
-            main_value_prop = value_prop_data.get("value_proposition_analysis", {}).get("core_value_proposition", product_input.value_proposition)
-            bullet_points.append(f"🎯 {main_value_prop}")
+            # 1. Beneficio principal de la propuesta de valor
+            if value_prop_data.get("core_value_proposition"):
+                bullet_points.append(f"✓ {value_prop_data['core_value_proposition']}")
+            elif product_input.value_proposition:
+                bullet_points.append(f"✓ {product_input.value_proposition}")
             
-            # Bullets 2-4: Beneficios clave
-            benefits = value_prop_data.get("value_proposition_analysis", {}).get("primary_benefits", product_input.competitive_advantages)
-            for i, benefit in enumerate(benefits[:3]):
-                emoji = ["✅", "💪", "🌟"][i] if i < 3 else "✨"
-                bullet_points.append(f"{emoji} {benefit}")
+            # 2. Ventajas competitivas
+            for advantage in product_input.competitive_advantages[:2]:  # Máximo 2
+                bullet_points.append(f"✓ {advantage}")
             
-            # Bullet 5: Caso de uso principal o especificación clave
+            # 3. Casos de uso principales
             if product_input.use_situations:
-                bullet_points.append(f"🏆 Perfecto para: {product_input.use_situations[0]}")
+                bullet_points.append(f"✓ Ideal para: {', '.join(product_input.use_situations[:3])}")
             
-            return bullet_points[:5]  # Amazon permite máximo 5 bullet points
+            # 4. Información técnica clave
+            if product_input.raw_specifications:
+                bullet_points.append(f"✓ Especificaciones: {product_input.raw_specifications[:100]}...")
+            
+            # 5. Garantía o soporte
+            if product_input.warranty_info:
+                bullet_points.append(f"✓ Garantía: {product_input.warranty_info}")
+            elif product_input.certifications:
+                bullet_points.append(f"✓ Certificado: {', '.join(product_input.certifications[:2])}")
+            
+            # Asegurar que tengamos al menos 3 bullet points
+            while len(bullet_points) < 3:
+                if len(bullet_points) == 0:
+                    bullet_points.append(f"✓ {product_input.product_name} - Calidad superior")
+                elif len(bullet_points) == 1:
+                    bullet_points.append("✓ Diseño premium y materiales de alta calidad")
+                else:
+                    bullet_points.append("✓ Fácil de usar y configurar")
+            
+            return bullet_points[:5]  # Máximo 5 bullet points
             
         except Exception as e:
-            logger.warning(f"Error generando bullet points: {str(e)}")
+            logger.warning(f"Error generando bullet points básicos: {str(e)}")
             return [
-                f"🎯 {product_input.value_proposition}",
-                *[f"✅ {adv}" for adv in product_input.competitive_advantages[:4]]
+                f"✓ {product_input.product_name} - Producto de calidad",
+                "✓ Diseño premium y duradero",
+                "✓ Fácil de usar y configurar",
+                "✓ Ideal para uso diario",
+                "✓ Incluye soporte y garantía"
             ]
     
-    async def _generate_description(self, product_input: ProductInput, agent_responses: Dict) -> str:
+    def _generate_basic_description(self, product_input: ProductInput, agent_responses: Dict) -> str:
         """
-        Genera descripción completa del producto usando el agente de descripción especializado
+        Genera descripción básica cuando el copywriter no está disponible
         """
         try:
-            # Intentar usar la descripción generada por el agente de descripción
-            description_agent_response = agent_responses.get("product_description")
-            if description_agent_response and description_agent_response.status == "success":
-                description_data = description_agent_response.data
-                
-                # Usar la descripción completa si está disponible
-                if description_data.get("full_description"):
-                    return description_data["full_description"]
-                
-                # Si no hay descripción completa, construir una a partir de las secciones
-                if description_data.get("main_description"):
-                    main_desc = description_data["main_description"]
-                    description_parts = []
-                    
-                    if main_desc.get("opening_hook"):
-                        description_parts.append(main_desc["opening_hook"])
-                    
-                    if main_desc.get("product_story"):
-                        description_parts.append(f"\n\n{main_desc['product_story']}")
-                    
-                    if main_desc.get("key_benefits_expanded"):
-                        description_parts.append(f"\n\n{main_desc['key_benefits_expanded']}")
-                    
-                    if main_desc.get("use_case_scenarios"):
-                        description_parts.append(f"\n\n{main_desc['use_case_scenarios']}")
-                    
-                    if main_desc.get("competitive_advantages"):
-                        description_parts.append(f"\n\n{main_desc['competitive_advantages']}")
-                    
-                    if main_desc.get("call_to_action"):
-                        description_parts.append(f"\n\n{main_desc['call_to_action']}")
-                    
-                    if description_parts:
-                        return "".join(description_parts)
-            
-            # Fallback: usar la descripción básica si el agente de descripción falló
             description_parts = []
             
-            # Introducción con propuesta de valor
-            description_parts.append(f"Descubre {product_input.product_name}")
-            description_parts.append(f"\n{product_input.value_proposition}")
+            # Introducción
+            description_parts.append(f"Descubre el {product_input.product_name}, diseñado para ofrecerte la mejor experiencia.")
             
-            # Beneficios clave
+            # Propuesta de valor
+            if product_input.value_proposition:
+                description_parts.append(f"\n{product_input.value_proposition}")
+            
+            # Beneficios principales
             if product_input.competitive_advantages:
-                description_parts.append("\n\nCARACTERÍSTICAS DESTACADAS:")
-                for advantage in product_input.competitive_advantages:
+                description_parts.append("\nCARACTERÍSTICAS DESTACADAS:")
+                for advantage in product_input.competitive_advantages[:4]:
                     description_parts.append(f"• {advantage}")
             
             # Casos de uso
             if product_input.use_situations:
-                description_parts.append("\n\nIDEAL PARA:")
-                for situation in product_input.use_situations:
-                    description_parts.append(f"• {situation}")
+                description_parts.append(f"\nPERFECTO PARA: {', '.join(product_input.use_situations)}")
             
-            # Especificaciones básicas
+            # Especificaciones técnicas
             if product_input.raw_specifications:
-                description_parts.append(f"\n\nESPECIFICACIONES:\n{product_input.raw_specifications}")
+                description_parts.append(f"\nESPECIFICACIONES: {product_input.raw_specifications}")
             
             # Contenido de la caja
             if product_input.box_content_description:
-                description_parts.append(f"\n\nCONTENIDO INCLUIDO:\n{product_input.box_content_description}")
+                description_parts.append(f"\nINCLUYE: {product_input.box_content_description}")
             
             # Garantía
             if product_input.warranty_info:
-                description_parts.append(f"\n\nGARANTÍA: {product_input.warranty_info}")
+                description_parts.append(f"\nGARANTÍA: {product_input.warranty_info}")
             
-            return "\n".join(description_parts)
+            description = "\n".join(description_parts)
+            
+            # Limitar a 2000 caracteres (límite de Amazon)
+            if len(description) > 2000:
+                description = description[:1997] + "..."
+            
+            return description
             
         except Exception as e:
-            logger.warning(f"Error generando descripción: {str(e)}")
+            logger.warning(f"Error generando descripción básica: {str(e)}")
             return f"{product_input.product_name}\n\n{product_input.value_proposition}"
     
     def _extract_search_terms(self, product_input: ProductInput, product_analysis: Dict) -> List[str]:

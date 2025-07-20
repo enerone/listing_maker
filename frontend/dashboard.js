@@ -100,8 +100,8 @@ async function loadDashboardData() {
     try {
         // Load listings and metrics in parallel
         const [listingsResponse, metricsResponse] = await Promise.all([
-            fetch(`${API_BASE_URL}/api/listings/`),
-            fetch(`${API_BASE_URL}/api/listings/metrics`)
+            fetch(`${API_BASE_URL}/listings/`),
+            fetch(`${API_BASE_URL}/listings/metrics`)
         ]);
         
         if (!listingsResponse.ok || !metricsResponse.ok) {
@@ -208,7 +208,7 @@ function renderRecentListings() {
                 <i class="fas fa-inbox text-4xl text-gray-400 mb-4"></i>
                 <h3 class="text-lg font-medium text-gray-900 mb-2">No hay listings</h3>
                 <p class="text-gray-600 mb-4">¡Crea tu primer listing para comenzar!</p>
-                <a href="create-listing.html" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
+                <a href="/generator" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
                     Crear Primer Listing
                 </a>
             </div>

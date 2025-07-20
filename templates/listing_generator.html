@@ -1,0 +1,1218 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        [v-cloak] { display: none; }
+        .listing-preview {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .form-section {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        .suggestion-card {
+            transition: all 0.3s ease;
+        }
+        .suggestion-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+        .spinner {
+            border: 3px solid #f3f3f4;
+            border-top: 3px solid #8b5cf6;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+        }
+        
+        .spinner-large {
+            border: 4px solid #f3f3f4;
+            border-top: 4px solid #8b5cf6;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            animation: spin 1s linear infinite;
+        }
+        
+        .loading-dots {
+            display: inline-block;
+            position: relative;
+            width: 40px;
+            height: 20px;
+        }
+        
+        .loading-dots div {
+            position: absolute;
+            top: 8px;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #8b5cf6;
+            animation: loading-dots 1.2s linear infinite;
+        }
+        
+        .loading-dots div:nth-child(1) { left: 8px; animation-delay: 0s; }
+        .loading-dots div:nth-child(2) { left: 16px; animation-delay: -0.4s; }
+        .loading-dots div:nth-child(3) { left: 24px; animation-delay: -0.8s; }
+        
+        .ai-thinking {
+            background: linear-gradient(45deg, #8b5cf6, #3b82f6);
+            background-size: 400% 400%;
+            animation: gradient-shift 2s ease infinite;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        @keyframes loading-dots {
+            0%, 80%, 100% { transform: scale(0); opacity: 0.5; }
+            40% { transform: scale(1); opacity: 1; }
+        }
+        
+        @keyframes gradient-shift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        .pulse-glow {
+            animation: pulse-glow 2s infinite;
+        }
+        
+        @keyframes pulse-glow {
+            0% { box-shadow: 0 0 5px rgba(139, 92, 246, 0.5); }
+            50% { box-shadow: 0 0 20px rgba(139, 92, 246, 0.8); }
+            100% { box-shadow: 0 0 5px rgba(139, 92, 246, 0.5); }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div id="app" v-cloak>
+        <!-- Header -->
+        <header class="bg-white shadow-lg">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between items-center py-6">
+                    <div class="flex items-center">
+                        <i class="fas fa-robot text-3xl text-blue-600 mr-3"></i>
+                        <h1 class="text-3xl font-bold text-gray-900">{{ title }}</h1>
+                    </div>
+                    <nav class="flex items-center space-x-4">
+                        <a href="/frontend/index.html" class="text-gray-600 hover:text-blue-600 px-4 py-2 rounded-lg transition-colors">
+                            <i class="fas fa-chart-line mr-2"></i>Dashboard
+                        </a>
+                        <a href="/generator" class="text-blue-600 bg-blue-50 px-4 py-2 rounded-lg transition-colors">
+                            <i class="fas fa-plus mr-2"></i>Crear Listing
+                        </a>
+                        <a href="/frontend/listings.html" class="text-gray-600 hover:text-blue-600 px-4 py-2 rounded-lg transition-colors">
+                            <i class="fas fa-list mr-2"></i>Ver Listings
+                        </a>
+                        <div class="flex items-center">
+                            <span class="text-sm text-gray-500">Powered by AI Agents</span>
+                            <div class="w-3 h-3 rounded-full bg-green-400 mr-2 ml-2"></div>
+                            <span class="text-sm text-gray-600">Sistema Activo</span>
+                        </div>
+                    </nav>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 h-screen">
+                
+                <!-- Panel Izquierdo - Formulario -->
+                <div class="bg-white rounded-lg shadow-xl overflow-hidden">
+                    <div class="form-section text-white p-6">
+                        <h2 class="text-2xl font-bold mb-2">
+                            <i class="fas fa-edit mr-2"></i>Datos del Producto
+                        </h2>
+                        <p class="text-blue-100">Completa la información para generar tu listing optimizado</p>
+                    </div>
+                    
+                    <div class="p-6 space-y-6 overflow-y-auto" style="max-height: calc(100vh - 200px);">
+                        <!-- Título -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                <i class="fas fa-tag mr-1"></i>Título del Producto
+                            </label>
+                            <input 
+                                v-model="formData.title" 
+                                type="text" 
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                placeholder="Ej: Smartwatch Premium con GPS y Monitor Cardíaco"
+                                required
+                            >
+                        </div>
+
+                        <!-- Descripción -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                <i class="fas fa-file-alt mr-1"></i>Descripción
+                            </label>
+                            <textarea 
+                                v-model="formData.description" 
+                                rows="4" 
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                placeholder="Describe las características principales, beneficios y propuesta de valor del producto..."
+                                required
+                            ></textarea>
+                        </div>
+
+                        <!-- Marca -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                <i class="fas fa-trademark mr-1"></i>Marca
+                            </label>
+                            <input 
+                                v-model="formData.brand" 
+                                type="text" 
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                placeholder="Nombre de la marca"
+                                required
+                            >
+                        </div>
+
+                        <!-- Categoría -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                <i class="fas fa-list mr-1"></i>Categoría
+                            </label>
+                            <select 
+                                v-model="formData.category" 
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                required
+                            >
+                                <option value="">Selecciona una categoría</option>
+                                <option value="Electronics">Electronics</option>
+                                <option value="Sports & Outdoors">Sports & Outdoors</option>
+                                <option value="Home & Garden">Home & Garden</option>
+                                <option value="Health & Personal Care">Health & Personal Care</option>
+                                <option value="Clothing, Shoes & Jewelry">Clothing, Shoes & Jewelry</option>
+                                <option value="Automotive">Automotive</option>
+                                <option value="Toys & Games">Toys & Games</option>
+                                <option value="Books">Books</option>
+                            </select>
+                        </div>
+
+                        <!-- Keywords Manuales -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                <i class="fas fa-key mr-1"></i>Keywords (Opcional)
+                            </label>
+                            <input 
+                                v-model="manualKeywordsInput" 
+                                type="text" 
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                placeholder="smartwatch, GPS, health tracker, fitness (separadas por comas)"
+                                @keyup.enter="addManualKeywords"
+                            >
+                            <div v-if="formData.manual_keywords.length > 0" class="mt-2 flex flex-wrap gap-2">
+                                <span 
+                                    v-for="(keyword, index) in formData.manual_keywords" 
+                                    :key="index"
+                                    class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                                >
+                                    [[ keyword ]]
+                                    <button @click="removeKeyword(index)" class="ml-2 text-blue-600 hover:text-blue-800">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Botones de Acción -->
+                        <div class="space-y-4">
+                            <!-- Generar Keywords -->
+                            <button 
+                                @click="generateKeywords" 
+                                :disabled="!canGenerateKeywords || isGeneratingKeywords"
+                                class="w-full bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 text-white font-bold py-3 px-6 rounded-lg transition-colors flex items-center justify-center"
+                            >
+                                <div v-if="isGeneratingKeywords" class="spinner mr-3"></div>
+                                <i v-else class="fas fa-search mr-2"></i>
+                                <span v-text="isGeneratingKeywords ? 'Generando Keywords...' : 'Generar Keywords con IA'"></span>
+                            </button>
+
+                            <!-- Keywords Generadas -->
+                            <div v-if="generatedKeywords.length > 0" class="mt-4">
+                                <div class="flex items-center justify-between mb-2">
+                                    <h4 class="text-sm font-medium text-gray-700">
+                                        <i class="fas fa-magic mr-1 text-purple-600"></i>Keywords Generadas por IA
+                                    </h4>
+                                    <button 
+                                        @click="showAddKeywordInput = !showAddKeywordInput"
+                                        class="text-purple-600 hover:text-purple-700 font-medium text-sm flex items-center"
+                                    >
+                                        <i class="fas fa-plus mr-1"></i>Agregar
+                                    </button>
+                                </div>
+                                
+                                <!-- Input para agregar keyword -->
+                                <div v-if="showAddKeywordInput" class="mb-3">
+                                    <div class="flex gap-2">
+                                        <input 
+                                            v-model="newKeyword"
+                                            @keyup.enter="addKeyword"
+                                            type="text" 
+                                            placeholder="Escribe un keyword..."
+                                            class="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                        >
+                                        <button 
+                                            @click="addKeyword"
+                                            :disabled="!newKeyword.trim()"
+                                            class="px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 text-white rounded-md text-sm font-medium"
+                                        >
+                                            <i class="fas fa-plus"></i>
+                                        </button>
+                                        <button 
+                                            @click="showAddKeywordInput = false; newKeyword = ''"
+                                            class="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-md text-sm font-medium"
+                                        >
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div class="flex flex-wrap gap-2 p-3 bg-purple-50 rounded-lg">
+                                    <span 
+                                        v-for="(keyword, index) in generatedKeywords" 
+                                        :key="keyword + index"
+                                        class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 group"
+                                    >
+                                        <span>[[ keyword ]]</span>
+                                        <button 
+                                            @click="removeGeneratedKeyword(index)"
+                                            class="ml-2 text-purple-600 hover:text-purple-800 opacity-0 group-hover:opacity-100 transition-opacity"
+                                        >
+                                            <i class="fas fa-times text-xs"></i>
+                                        </button>
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Generar Listing -->
+                            <button 
+                                @click="generateListing" 
+                                :disabled="!canGenerateListing || isGeneratingListing"
+                                class="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-bold py-4 px-6 rounded-lg transition-colors flex items-center justify-center text-lg"
+                            >
+                                <div v-if="isGeneratingListing" class="spinner mr-3"></div>
+                                <i v-else class="fas fa-rocket mr-2"></i>
+                                <span v-text="isGeneratingListing ? 'Generando Listing...' : 'Generar Listing Completo'"></span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Panel Derecho - Vista del Resultado -->
+                <div class="bg-white rounded-lg shadow-xl overflow-hidden">
+                    <div class="listing-preview text-white p-6">
+                        <h2 class="text-2xl font-bold mb-2">
+                            <i class="fas fa-eye mr-2"></i>Vista Previa del Listing
+                        </h2>
+                        <p class="text-blue-100" v-text="listingGenerated ? 'Listing generado - Listo para Amazon' : 'Vista previa en tiempo real'"></p>
+                    </div>
+                    
+                    <div class="p-6 space-y-6 overflow-y-auto" style="max-height: calc(100vh - 200px);">
+                        
+                        <!-- Estado de Carga -->
+                        <div v-if="isGeneratingListing" class="flex items-center justify-center py-12">
+                            <div class="text-center">
+                                <div class="spinner mx-auto mb-4"></div>
+                                <p class="text-gray-600">Generando tu listing optimizado...</p>
+                                <p class="text-sm text-gray-500 mt-2">Esto puede tomar unos segundos</p>
+                            </div>
+                        </div>
+
+                        <!-- Vista Previa Draft -->
+                        <div v-else-if="!listingGenerated" class="space-y-6">
+                            <div class="border-l-4 border-blue-500 pl-4">
+                                <h3 class="text-lg font-semibold text-gray-800 mb-2">
+                                    <i class="fas fa-edit mr-2 text-blue-500"></i>Modo Draft - Vista Previa
+                                </h3>
+                                <p class="text-gray-600 text-sm">Esta es una vista previa basada en tus datos. Haz clic en "Generar Listing" para el resultado final optimizado.</p>
+                            </div>
+
+                            <!-- Título Draft -->
+                            <div class="bg-gray-50 p-4 rounded-lg">
+                                <h4 class="font-medium text-gray-700 mb-2">📝 Título</h4>
+                                <p class="text-gray-800" v-text="formData.title || 'Ingresa el título del producto...'"></p>
+                            </div>
+
+                            <!-- Descripción Draft -->
+                            <div class="bg-gray-50 p-4 rounded-lg">
+                                <h4 class="font-medium text-gray-700 mb-2">📄 Descripción</h4>
+                                <p class="text-gray-800 whitespace-pre-line" v-text="formData.description || 'Ingresa la descripción del producto...'"></p>
+                            </div>
+
+                            <!-- Metadatos Draft -->
+                            <div class="bg-gray-50 p-4 rounded-lg">
+                                <h4 class="font-medium text-gray-700 mb-2">🏷️ Información Adicional</h4>
+                                <div class="space-y-2 text-sm">
+                                    <p><strong>Categoría:</strong> <span v-text="formData.category || 'No definida'"></span></p>
+                                    <p><strong>Marca:</strong> <span v-text="formData.brand || 'No definida'"></span></p>
+                                    <p v-if="allKeywords.length > 0"><strong>Keywords:</strong> <span v-text="allKeywords.join(', ')"></span></p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Resultado Final Generado -->
+                        <div v-else class="space-y-6">
+                            <div class="border-l-4 border-green-500 pl-4">
+                                <h3 class="text-lg font-semibold text-gray-800 mb-2">
+                                    <i class="fas fa-check-circle mr-2 text-green-500"></i>Listing Generado - Optimizado para Amazon
+                                </h3>
+                                <p class="text-gray-600 text-sm">Contenido optimizado por IA con copywriting persuasivo y SEO.</p>
+                            </div>
+
+                            <!-- Título Optimizado -->
+                            <div class="bg-green-50 border border-green-200 p-4 rounded-lg">
+                                <h4 class="font-medium text-gray-700 mb-2 flex items-center">
+                                    <i class="fas fa-crown mr-2 text-yellow-500"></i>Título Optimizado
+                                    <span class="ml-auto text-xs text-gray-500" v-text="(generatedListing.main_title?.length || 0) + '/200 caracteres'"></span>
+                                </h4>
+                                <p class="text-gray-800 font-medium" v-text="generatedListing.main_title"></p>
+                            </div>
+
+                            <!-- Bullet Points -->
+                            <div class="bg-blue-50 border border-blue-200 p-4 rounded-lg">
+                                <h4 class="font-medium text-gray-700 mb-3 flex items-center">
+                                    <i class="fas fa-list-ul mr-2 text-blue-500"></i>Bullet Points
+                                </h4>
+                                <ul class="space-y-2">
+                                    <li 
+                                        v-for="(bullet, index) in generatedListing.bullet_points" 
+                                        :key="index"
+                                        class="flex items-start"
+                                    >
+                                        <span class="text-blue-600 mr-2 mt-1">•</span>
+                                        <span class="text-gray-800" v-text="bullet"></span>
+                                    </li>
+                                </ul>
+                            </div>
+
+                            <!-- Descripción Optimizada -->
+                            <div class="bg-purple-50 border border-purple-200 p-4 rounded-lg">
+                                <h4 class="font-medium text-gray-700 mb-2 flex items-center">
+                                    <i class="fas fa-file-alt mr-2 text-purple-500"></i>Descripción Optimizada
+                                    <span class="ml-auto text-xs text-gray-500" v-text="(generatedListing.product_description?.length || 0) + '/2000 caracteres'"></span>
+                                </h4>
+                                <p class="text-gray-800 whitespace-pre-line" v-text="generatedListing.product_description"></p>
+                            </div>
+
+                            <!-- Backend Keywords -->
+                            <div v-if="generatedListing.backend_keywords" class="bg-gray-50 p-4 rounded-lg">
+                                <h4 class="font-medium text-gray-700 mb-2 flex items-center">
+                                    <i class="fas fa-search mr-2 text-gray-500"></i>Keywords de Backend
+                                    <span class="ml-auto text-xs text-gray-500" v-text="(generatedListing.backend_keywords?.length || 0) + '/250 caracteres'"></span>
+                                </h4>
+                                <p class="text-gray-600 text-sm" v-text="generatedListing.backend_keywords"></p>
+                            </div>
+
+                            <!-- Prompts para Generación de Imágenes con IA -->
+                            <div v-if="imageAiPrompts && Object.keys(imageAiPrompts).length > 0" class="bg-gradient-to-r from-purple-50 to-pink-50 p-4 rounded-lg border border-purple-200">
+                                <h4 class="font-medium text-gray-700 mb-3 flex items-center">
+                                    <i class="fas fa-magic mr-2 text-purple-600"></i>🎨 Prompts para Generación de Imágenes con IA
+                                    <span class="ml-auto text-xs text-purple-600 bg-purple-100 px-2 py-1 rounded-full">[[Object.keys(imageAiPrompts).length]] prompts</span>
+                                </h4>
+                                
+                                <div class="space-y-3">
+                                    <div v-for="(prompt, type) in imageAiPrompts" :key="type" class="bg-white p-3 rounded-lg border border-purple-100">
+                                        <div class="flex items-center justify-between mb-2">
+                                            <h5 class="font-semibold text-sm text-gray-700 capitalize flex items-center">
+                                                <span class="w-2 h-2 rounded-full mr-2" :class="{
+                                                    'bg-blue-500': type === 'main_product',
+                                                    'bg-green-500': type === 'contextual', 
+                                                    'bg-purple-500': type === 'lifestyle',
+                                                    'bg-orange-500': type === 'detail',
+                                                    'bg-red-500': type === 'comparative'
+                                                }"></span>
+                                                [[type.replace('_', ' ')]]
+                                            </h5>
+                                            <button 
+                                                @click="copyPromptToClipboard(prompt, type)"
+                                                class="text-xs bg-purple-100 hover:bg-purple-200 text-purple-700 px-2 py-1 rounded transition-colors"
+                                                title="Copiar prompt"
+                                            >
+                                                <i class="fas fa-copy"></i> Copiar
+                                            </button>
+                                        </div>
+                                        <p class="text-gray-600 text-sm leading-relaxed" v-text="prompt"></p>
+                                    </div>
+                                </div>
+                                
+                                <div class="mt-4 p-3 bg-purple-100 rounded-lg">
+                                    <div class="flex items-start space-x-2">
+                                        <i class="fas fa-lightbulb text-purple-600 mt-1"></i>
+                                        <div class="text-xs text-purple-700">
+                                            <strong>💡 Tip:</strong> Estos prompts están optimizados para Stable Diffusion, DALL-E, Midjourney y otras herramientas de IA. 
+                                            Puedes usarlos directamente o modificarlos según tu estilo preferido.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Botones de Acción -->
+                            <div class="space-y-3 pt-4">
+                                <!-- Estado de Guardado -->
+                                <div v-if="autoSaved" class="flex items-center justify-center p-3 bg-green-50 border border-green-200 rounded-lg">
+                                    <i class="fas fa-check-circle text-green-600 mr-2"></i>
+                                    <span class="text-green-700 font-medium">Guardado automáticamente en la base de datos</span>
+                                    <span v-if="databaseId" class="ml-2 text-green-600 text-sm">(ID: {{ databaseId }})</span>
+                                </div>
+                                
+                                <!-- Debug Info -->
+                                <div class="text-xs text-gray-500 p-2 bg-gray-50 rounded border">
+                                    <strong>Debug v2.0:</strong> SessionID: <span v-text="sessionId || 'NO_SESSION'"></span> | 
+                                    AutoSaved: <span v-text="autoSaved"></span> | 
+                                    DatabaseID: <span v-text="databaseId || 'NO_ID'"></span> | 
+                                    SaveEnabled: <span v-text="saveButtonEnabled"></span> | 
+                                    IsSaving: <span v-text="isSaving"></span>
+                                </div>
+                                
+                                <!-- Botón de Guardar Manual -->
+                                <button 
+                                    @click="saveListing"
+                                    :disabled="!saveButtonEnabled"
+                                    :class="{'bg-green-600 hover:bg-green-700': saveButtonEnabled, 'bg-gray-400 cursor-not-allowed': !saveButtonEnabled}"
+                                    class="w-full text-white py-3 px-4 rounded-lg transition-colors flex items-center justify-center font-medium"
+                                >
+                                    <div v-if="isSaving" class="spinner mr-2"></div>
+                                    <i v-else-if="autoSaved" class="fas fa-sync mr-2"></i>
+                                    <i v-else class="fas fa-save mr-2"></i>
+                                    <span v-text="isSaving ? 'Guardando...' : (autoSaved ? 'Actualizar Guardado' : 'Guardar Listing')"></span>
+                                    <span v-if="!saveButtonEnabled" class="ml-2 text-xs">(DISABLED)</span>
+                                </button>
+                                
+                                <!-- Botones de Copia -->
+                                <div class="flex space-x-3">
+                                    <button 
+                                        @click="copyToClipboard('html')"
+                                        class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg transition-colors flex items-center justify-center"
+                                    >
+                                        <i class="fas fa-copy mr-2"></i>Copiar HTML
+                                    </button>
+                                    <button 
+                                        @click="copyToClipboard('text')"
+                                        class="flex-1 bg-gray-600 hover:bg-gray-700 text-white py-2 px-4 rounded-lg transition-colors flex items-center justify-center"
+                                    >
+                                        <i class="fas fa-file-text mr-2"></i>Copiar Texto
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabla de Sugerencias -->
+            <div v-if="suggestions.length > 0" class="mt-8">
+                <div class="bg-white rounded-lg shadow-xl overflow-hidden">
+                    <div class="bg-gradient-to-r from-yellow-400 to-orange-500 text-white p-6">
+                        <h3 class="text-2xl font-bold mb-2">
+                            <i class="fas fa-lightbulb mr-2"></i>Sugerencias Inteligentes
+                        </h3>
+                        <p class="text-yellow-100">Mejoras automáticas generadas por IA para optimizar tu listing</p>
+                    </div>
+                    
+                    <div class="p-6">
+                        <!-- Botones de Acción Masiva -->
+                        <div class="flex space-x-4 mb-6">
+                            <!-- Debug info -->
+                            <button 
+                                v-if="sessionId"
+                                @click="console.log('Session ID:', sessionId, 'Suggestions:', suggestions)"
+                                class="text-xs text-gray-500 hover:text-gray-700 px-3 py-2 border border-gray-300 rounded"
+                                title="Debug info"
+                            >
+                                <i class="fas fa-bug mr-1"></i>Debug
+                            </button>
+                            
+                            <button 
+                                @click="applyAllSuggestions"
+                                :disabled="isApplying || !sessionId"
+                                class="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-6 py-2 rounded-lg transition-colors flex items-center"
+                            >
+                                <i class="fas fa-check-double mr-2"></i>
+                                Aplicar Todas
+                            </button>
+                            <button 
+                                @click="revertChanges"
+                                :disabled="appliedSuggestionsCount === 0"
+                                class="bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white px-6 py-2 rounded-lg transition-colors flex items-center"
+                            >
+                                <i class="fas fa-undo mr-2"></i>
+                                Revertir Cambios (<span v-text="appliedSuggestionsCount"></span>)
+                            </button>
+                        </div>
+
+                        <!-- Lista de Sugerencias -->
+                        <div class="grid gap-4">
+                            <div 
+                                v-for="suggestion in suggestions" 
+                                :key="suggestion.id"
+                                class="suggestion-card border border-gray-200 rounded-lg p-4 hover:border-blue-300"
+                            >
+                                <div class="flex items-start justify-between">
+                                    <div class="flex-1">
+                                        <div class="flex items-center mb-2">
+                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium"
+                                                  :class="getPriorityClass(suggestion.priority)"
+                                                  v-text="suggestion.priority.toUpperCase()">
+                                            </span>
+                                            <span class="ml-2 text-sm text-gray-600">
+                                                Campo: <strong v-text="getFieldName(suggestion.field)"></strong>
+                                            </span>
+                                            <span class="ml-2 text-sm text-gray-500">
+                                                por <span v-text="suggestion.agent"></span>
+                                            </span>
+                                        </div>
+                                        
+                                        <p class="text-sm text-gray-700 mb-3" v-text="suggestion.reason"></p>
+                                        
+                                        <!-- Contenido de la Sugerencia -->
+                                        <div class="bg-gray-50 p-3 rounded border-l-4 border-blue-500">
+                                            <h5 class="text-sm font-medium text-gray-700 mb-1">Contenido sugerido:</h5>
+                                            <p class="text-sm text-gray-800" v-text="suggestion.content"></p>
+                                        </div>
+                                        
+                                        <!-- Debug Info para sugerencias -->
+                                        <div class="text-xs text-gray-400 mt-1">
+                                            ID: <span v-text="suggestion.id"></span> | SessionID: <span v-text="sessionId || 'NO_SESSION'"></span> | 
+                                            CanApply: <span v-text="!isApplying && !!sessionId"></span>
+                                        </div>
+                                        
+                                        <!-- Editor Inline (si está editando) -->
+                                        <div v-if="editingSuggestion === suggestion.id" class="mt-3">
+                                            <textarea 
+                                                v-model="editedContent"
+                                                class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                rows="3"
+                                                placeholder="Edita el contenido de la sugerencia..."
+                                            ></textarea>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Botones de Acción -->
+                                    <div class="ml-4 flex flex-col space-y-2">
+                                        <button 
+                                            v-if="editingSuggestion !== suggestion.id"
+                                            @click="startEditingSuggestion(suggestion)"
+                                            class="text-blue-600 hover:text-blue-800 text-sm flex items-center"
+                                        >
+                                            <i class="fas fa-edit mr-1"></i>Editar
+                                        </button>
+                                        
+                                        <!-- Botón Reintentar -->
+                                        <button 
+                                            v-if="editingSuggestion !== suggestion.id"
+                                            @click="regenerateSuggestion(suggestion.id, 'improve')"
+                                            :disabled="isRegenerating"
+                                            class="text-purple-600 hover:text-purple-800 text-sm flex items-center"
+                                        >
+                                            <i class="fas fa-sync-alt mr-1" :class="{'animate-spin': isRegenerating}"></i>
+                                            Reintentar
+                                        </button>
+                                        
+                                        <template v-if="editingSuggestion === suggestion.id">
+                                            <button 
+                                                @click="applySuggestion(suggestion, true)"
+                                                :disabled="isApplying"
+                                                class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm"
+                                            >
+                                                <i class="fas fa-check mr-1"></i>Aplicar
+                                            </button>
+                                            <button 
+                                                @click="cancelEditingSuggestion"
+                                                class="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded text-sm"
+                                            >
+                                                <i class="fas fa-times mr-1"></i>Cancelar
+                                            </button>
+                                        </template>
+                                        
+                                        <button 
+                                            v-else
+                                            @click="applySuggestion(suggestion, false)"
+                                            :disabled="isApplying || !sessionId"
+                                            class="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-3 py-1 rounded text-sm"
+                                            :title="!sessionId ? 'No hay sesión activa' : isApplying ? 'Aplicando...' : 'Aplicar sugerencia'"
+                                        >
+                                            <i class="fas fa-plus mr-1"></i>
+                                            <span v-if="isApplying">Aplicando...</span>
+                                            <span v-else>Aplicar</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Toast Notifications -->
+        <div v-if="toast.show" class="fixed bottom-4 right-4 z-50">
+            <div class="px-6 py-3 rounded-lg shadow-lg transform transition-transform duration-300"
+                 :class="toast.type === 'success' ? 'bg-green-500 text-white' : 
+                         toast.type === 'error' ? 'bg-red-500 text-white' : 
+                         'bg-blue-500 text-white'">
+                <div class="flex items-center">
+                    <i :class="toast.type === 'success' ? 'fas fa-check-circle' : 
+                               toast.type === 'error' ? 'fas fa-exclamation-circle' : 
+                               'fas fa-info-circle'" class="mr-2"></i>
+                    <span v-text="toast.message"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Cambiar delimitadores para evitar conflicto con Jinja2
+        const { createApp, ref, computed, onMounted, watch } = Vue;
+
+        createApp({
+            delimiters: ['[[', ']]'],
+            setup() {
+                console.log('🔍 Debug - Setup iniciando con Vue versión actualizada v2.0');
+                
+                // Estado reactivo
+                const formData = ref({
+                    title: '',
+                    description: '',
+                    category: '',
+                    brand: '',
+                    manual_keywords: []
+                });
+
+                const manualKeywordsInput = ref('');
+                const generatedKeywords = ref([]);
+                const newKeyword = ref('');
+                const showAddKeywordInput = ref(false);
+                const isGeneratingKeywords = ref(false);
+                const isGeneratingListing = ref(false);
+                const listingGenerated = ref(false);
+                const generatedListing = ref({});
+                const suggestions = ref([]);
+                const sessionId = ref(null);
+                const appliedSuggestionsCount = ref(0);
+                const isApplying = ref(false);
+                const isRegenerating = ref(false);
+                const editingSuggestion = ref(null);
+                const editedContent = ref('');
+                
+                // Variables para guardar listing
+                const isSaving = ref(false);
+                const autoSaved = ref(false);
+                const databaseId = ref(null);
+                const saveButtonEnabled = ref(false);
+                
+                // Variables para prompts de imágenes IA
+                const imageAiPrompts = ref({});
+                
+                // Watch para actualizar saveButtonEnabled cuando cambie sessionId o isSaving
+                watch([sessionId, isSaving], ([newSessionId, newIsSaving]) => {
+                    const hasSession = newSessionId && newSessionId !== '' && newSessionId !== null;
+                    const notSaving = !newIsSaving;
+                    saveButtonEnabled.value = notSaving && hasSession;
+                    console.log('🔍 Debug watch - sessionId:', newSessionId, 'hasSession:', hasSession, 'notSaving:', notSaving, 'saveButtonEnabled:', saveButtonEnabled.value);
+                }, { immediate: true });
+                
+                const toast = ref({
+                    show: false,
+                    message: '',
+                    type: 'info'
+                });
+
+                // Computed properties
+                const canGenerateKeywords = computed(() => {
+                    return formData.value.title.trim() && 
+                           formData.value.description.trim() && 
+                           formData.value.category && 
+                           formData.value.brand.trim();
+                });
+
+                const canGenerateListing = computed(() => {
+                    return canGenerateKeywords.value && allKeywords.value.length > 0;
+                });
+
+                const allKeywords = computed(() => {
+                    return [...formData.value.manual_keywords, ...generatedKeywords.value];
+                });
+
+
+                // Métodos
+                const showToast = (message, type = 'info') => {
+                    toast.value = { show: true, message, type };
+                    setTimeout(() => {
+                        toast.value.show = false;
+                    }, 3000);
+                };
+
+                const addManualKeywords = () => {
+                    if (manualKeywordsInput.value.trim()) {
+                        const keywords = manualKeywordsInput.value.split(',')
+                            .map(k => k.trim())
+                            .filter(k => k && !formData.value.manual_keywords.includes(k));
+                        
+                        formData.value.manual_keywords.push(...keywords);
+                        manualKeywordsInput.value = '';
+                    }
+                };
+
+                const removeKeyword = (index) => {
+                    formData.value.manual_keywords.splice(index, 1);
+                };
+
+                const addKeyword = () => {
+                    const keyword = newKeyword.value.trim();
+                    if (keyword && !generatedKeywords.value.includes(keyword)) {
+                        generatedKeywords.value.push(keyword);
+                        newKeyword.value = '';
+                        showAddKeywordInput.value = false;
+                        showToast(`Keyword "${keyword}" agregado`, 'success');
+                    } else if (generatedKeywords.value.includes(keyword)) {
+                        showToast('Este keyword ya existe', 'warning');
+                    }
+                };
+
+                const removeGeneratedKeyword = (index) => {
+                    const removedKeyword = generatedKeywords.value[index];
+                    generatedKeywords.value.splice(index, 1);
+                    showToast(`Keyword "${removedKeyword}" eliminado`, 'info');
+                };
+
+                const generateKeywords = async () => {
+                    isGeneratingKeywords.value = true;
+                    try {
+                        const response = await fetch('/api/generate-keywords', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                title: formData.value.title,
+                                description: formData.value.description,
+                                category: formData.value.category,
+                                brand: formData.value.brand,
+                                manual_keywords: formData.value.manual_keywords
+                            })
+                        });
+
+                        const result = await response.json();
+                        
+                        if (result.success) {
+                            generatedKeywords.value = result.keywords;
+                            showToast(`Se generaron ${result.keywords.length} keywords optimizadas`, 'success');
+                        } else {
+                            showToast(`Error: ${result.error}`, 'error');
+                        }
+                    } catch (error) {
+                        showToast(`Error de conexión: ${error.message}`, 'error');
+                    } finally {
+                        isGeneratingKeywords.value = false;
+                    }
+                };
+
+                const generateListing = async () => {
+                    isGeneratingListing.value = true;
+                    try {
+                        const response = await fetch('/api/generate-listing', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                title: formData.value.title,
+                                description: formData.value.description,
+                                category: formData.value.category,
+                                brand: formData.value.brand,
+                                keywords: allKeywords.value
+                            })
+                        });
+
+                        const result = await response.json();
+                        
+                        console.log('🔍 Debug - Resultado completo:', result);
+                        console.log('🔍 Debug - Session ID recibido:', result.session_id);
+                        console.log('🔍 Debug - Tipo de Session ID:', typeof result.session_id);
+                        
+                        if (result.success) {
+                            generatedListing.value = result.listing;
+                            suggestions.value = result.suggestions;
+                            
+                            // Capturar prompts de imágenes IA
+                            if (result.image_ai_prompts) {
+                                imageAiPrompts.value = result.image_ai_prompts;
+                                console.log('🎨 Debug - Prompts de imágenes IA capturados:', imageAiPrompts.value);
+                            } else {
+                                imageAiPrompts.value = {};
+                                console.log('🎨 Debug - No se recibieron prompts de imágenes IA');
+                            }
+                            
+                            // Asegurar que sessionId no sea undefined o vacío
+                            const receivedSessionId = result.session_id;
+                            if (receivedSessionId && receivedSessionId !== '' && receivedSessionId !== null) {
+                                sessionId.value = receivedSessionId;
+                            } else {
+                                console.error('🔍 Debug - Session ID recibido inválido:', receivedSessionId);
+                                sessionId.value = null;
+                            }
+                            
+                            listingGenerated.value = true;
+                            
+                            console.log('🔍 Debug - sessionId.value después de asignar:', sessionId.value);
+                            console.log('🔍 Debug - Tipo de sessionId.value:', typeof sessionId.value);
+                            console.log('🔍 Debug - sessionId.value == "":', sessionId.value == "");
+                            console.log('🔍 Debug - !sessionId.value:', !sessionId.value);
+                            
+                            // Verificar si se guardó automáticamente
+                            if (result.auto_saved && result.database_id) {
+                                autoSaved.value = true;
+                                databaseId.value = result.database_id;
+                                showToast('¡Listing generado y guardado automáticamente!', 'success');
+                            } else {
+                                autoSaved.value = false;
+                                databaseId.value = null;
+                                showToast('¡Listing generado exitosamente! (Haz clic en "Guardar" para guardarlo)', 'success');
+                            }
+                        } else {
+                            showToast(`Error: ${result.error}`, 'error');
+                        }
+                    } catch (error) {
+                        showToast(`Error de conexión: ${error.message}`, 'error');
+                    } finally {
+                        isGeneratingListing.value = false;
+                    }
+                };
+
+                const applySuggestion = async (suggestion, isEdited = false) => {
+                    console.log('🔍 Debug applySuggestion - sessionId:', sessionId.value);
+                    console.log('🔍 Debug applySuggestion - suggestion:', suggestion);
+                    console.log('🔍 Debug applySuggestion - isEdited:', isEdited);
+                    
+                    if (!sessionId.value) {
+                        showToast('Error: No hay sesión activa. Genera un listing primero.', 'error');
+                        return;
+                    }
+                    
+                    isApplying.value = true;
+                    try {
+                        const response = await fetch('/api/apply-suggestion', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                suggestion_id: suggestion.id,
+                                session_id: sessionId.value,  // Incluir session_id
+                                field: suggestion.field,
+                                content: suggestion.content,
+                                edited_content: isEdited ? editedContent.value : null
+                            })
+                        });
+
+                        const result = await response.json();
+                        console.log('🔍 Debug applySuggestion - resultado:', result);
+                        
+                        if (result.success) {
+                            generatedListing.value = result.updated_listing;
+                            appliedSuggestionsCount.value = result.applied_suggestions_count;
+                            showToast('Sugerencia aplicada exitosamente', 'success');
+                            
+                            if (isEdited) {
+                                cancelEditingSuggestion();
+                            }
+                        } else {
+                            showToast(`Error: ${result.error}`, 'error');
+                        }
+                    } catch (error) {
+                        console.error('🔍 Debug applySuggestion - error:', error);
+                        showToast(`Error de conexión: ${error.message}`, 'error');
+                    } finally {
+                        isApplying.value = false;
+                    }
+                };
+
+                const regenerateSuggestion = async (suggestionId, regenerationType = 'improve') => {
+                    if (!sessionId.value) {
+                        showToast('Error: No hay sesión activa. Genera un listing primero.', 'error');
+                        return;
+                    }
+                    
+                    console.log('🔍 Debug regenerateSuggestion - sessionId:', sessionId.value);
+                    console.log('🔍 Debug regenerateSuggestion - suggestionId:', suggestionId);
+                    
+                    isRegenerating.value = true;
+                    try {
+                        // Encontrar la sugerencia actual
+                        const suggestion = suggestions.value.find(s => s.id === suggestionId);
+                        if (!suggestion) {
+                            showToast('Error: Sugerencia no encontrada', 'error');
+                            return;
+                        }
+                        
+                        console.log('🔍 Debug regenerateSuggestion - suggestion encontrada:', suggestion);
+                        
+                        const response = await fetch('/api/regenerate-suggestion', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                suggestion_id: suggestionId,
+                                session_id: sessionId.value,
+                                field: suggestion.field,
+                                current_content: suggestion.content,
+                                regeneration_type: regenerationType
+                            })
+                        });
+
+                        const result = await response.json();
+                        console.log('🔍 Debug regenerateSuggestion - resultado:', result);
+                        
+                        if (result.success) {
+                            // Actualizar las sugerencias con el nuevo contenido
+                            suggestions.value = result.updated_suggestions;
+                            console.log('🔍 Debug regenerateSuggestion - sugerencias actualizadas:', suggestions.value);
+                            
+                            // Forzar reactividad - trigger manual de Vue
+                            suggestions.value = [...suggestions.value];
+                            
+                            showToast('Sugerencia regenerada exitosamente', 'success');
+                        } else {
+                            showToast(`Error: ${result.error}`, 'error');
+                        }
+                    } catch (error) {
+                        console.error('🔍 Debug regenerateSuggestion - error:', error);
+                        showToast(`Error de conexión: ${error.message}`, 'error');
+                    } finally {
+                        isRegenerating.value = false;
+                    }
+                };
+
+                const applyAllSuggestions = async () => {
+                    isApplying.value = true;
+                    try {
+                        const response = await fetch(`/api/apply-all-suggestions/${sessionId.value}`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            }
+                        });
+
+                        const result = await response.json();
+                        
+                        if (result.success) {
+                            generatedListing.value = result.updated_listing;
+                            appliedSuggestionsCount.value = result.applied_count;
+                            showToast(result.message, 'success');
+                        } else {
+                            showToast(`Error: ${result.error}`, 'error');
+                        }
+                    } catch (error) {
+                        showToast(`Error de conexión: ${error.message}`, 'error');
+                    } finally {
+                        isApplying.value = false;
+                    }
+                };
+
+                const revertChanges = async () => {
+                    isApplying.value = true;
+                    try {
+                        const response = await fetch(`/api/revert-changes/${sessionId.value}`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            }
+                        });
+
+                        const result = await response.json();
+                        
+                        if (result.success) {
+                            generatedListing.value = result.reverted_listing;
+                            appliedSuggestionsCount.value = 0;
+                            showToast(result.message, 'success');
+                        } else {
+                            showToast(`Error: ${result.error}`, 'error');
+                        }
+                    } catch (error) {
+                        showToast(`Error de conexión: ${error.message}`, 'error');
+                    } finally {
+                        isApplying.value = false;
+                    }
+                };
+
+                const startEditingSuggestion = (suggestion) => {
+                    editingSuggestion.value = suggestion.id;
+                    editedContent.value = suggestion.content;
+                };
+
+                const cancelEditingSuggestion = () => {
+                    editingSuggestion.value = null;
+                    editedContent.value = '';
+                };
+
+                const getPriorityClass = (priority) => {
+                    switch (priority) {
+                        case 'high': return 'bg-red-100 text-red-800';
+                        case 'medium': return 'bg-yellow-100 text-yellow-800';
+                        case 'low': return 'bg-green-100 text-green-800';
+                        default: return 'bg-gray-100 text-gray-800';
+                    }
+                };
+
+                const getFieldName = (field) => {
+                    switch (field) {
+                        case 'title': return 'Título';
+                        case 'bullets': return 'Bullet Points';
+                        case 'description': return 'Descripción';
+                        default: return field;
+                    }
+                };
+
+                const saveListing = async () => {
+                    console.log('🔍 Debug saveListing - sessionId.value:', sessionId.value);
+                    console.log('🔍 Debug saveListing - Tipo:', typeof sessionId.value);
+                    console.log('🔍 Debug saveListing - Es null:', sessionId.value === null);
+                    console.log('🔍 Debug saveListing - Es string vacío:', sessionId.value === '');
+                    console.log('🔍 Debug saveListing - Es falsy:', !sessionId.value);
+                    
+                    if (!sessionId.value || sessionId.value === '' || sessionId.value === null) {
+                        showToast('Error: No hay sesión activa. Genera un listing primero.', 'error');
+                        return;
+                    }
+
+                    isSaving.value = true;
+                    try {
+                        console.log('🔍 Debug saveListing - Enviando request con sessionId:', sessionId.value);
+                        
+                        const response = await fetch('/api/save-listing', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                session_id: sessionId.value,
+                                save_as_draft: false
+                            })
+                        });
+
+                        const result = await response.json();
+                        console.log('🔍 Debug saveListing - Respuesta del servidor:', result);
+                        
+                        if (result.success) {
+                            autoSaved.value = true;
+                            databaseId.value = result.database_id;
+                            showToast('¡Listing guardado exitosamente!', 'success');
+                        } else {
+                            showToast(`Error al guardar: ${result.error}`, 'error');
+                        }
+                    } catch (error) {
+                        console.error('🔍 Debug saveListing - Error:', error);
+                        showToast(`Error de conexión: ${error.message}`, 'error');
+                    } finally {
+                        isSaving.value = false;
+                    }
+                };
+
+                const copyToClipboard = (format) => {
+                    let content = '';
+                    
+                    if (format === 'html') {
+                        content = `
+<h1>${generatedListing.value.main_title}</h1>
+<ul>
+${generatedListing.value.bullet_points?.map(bullet => `  <li>${bullet}</li>`).join('\n') || ''}
+</ul>
+<p>${generatedListing.value.product_description}</p>
+                        `.trim();
+                    } else {
+                        content = `
+${generatedListing.value.main_title}
+
+Bullet Points:
+${generatedListing.value.bullet_points?.map(bullet => `• ${bullet}`).join('\n') || ''}
+
+Descripción:
+${generatedListing.value.product_description}
+
+Keywords de Backend:
+${generatedListing.value.backend_keywords}
+                        `.trim();
+                    }
+                    
+                    navigator.clipboard.writeText(content).then(() => {
+                        showToast(`Contenido copiado como ${format.toUpperCase()}`, 'success');
+                    }).catch(() => {
+                        showToast('Error al copiar contenido', 'error');
+                    });
+                };
+
+                const copyPromptToClipboard = (prompt, type) => {
+                    navigator.clipboard.writeText(prompt).then(() => {
+                        showToast(`Prompt "${type}" copiado al portapapeles`, 'success');
+                    }).catch(() => {
+                        showToast('Error al copiar prompt', 'error');
+                    });
+                };
+
+                return {
+                    formData,
+                    manualKeywordsInput,
+                    generatedKeywords,
+                    newKeyword,
+                    showAddKeywordInput,
+                    isGeneratingKeywords,
+                    isGeneratingListing,
+                    listingGenerated,
+                    generatedListing,
+                    suggestions,
+                    sessionId,
+                    appliedSuggestionsCount,
+                    isApplying,
+                    isRegenerating,
+                    editingSuggestion,
+                    editedContent,
+                    isSaving,
+                    autoSaved,
+                    databaseId,
+                    toast,
+                    canGenerateKeywords,
+                    canGenerateListing,
+                    allKeywords,
+                    saveButtonEnabled,
+                    addManualKeywords,
+                    removeKeyword,
+                    addKeyword,
+                    removeGeneratedKeyword,
+                    generateKeywords,
+                    generateListing,
+                    applySuggestion,
+                    regenerateSuggestion,
+                    applyAllSuggestions,
+                    revertChanges,
+                    startEditingSuggestion,
+                    cancelEditingSuggestion,
+                    getPriorityClass,
+                    getFieldName,
+                    saveListing,
+                    copyToClipboard,
+                    imageAiPrompts,
+                    copyPromptToClipboard
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>

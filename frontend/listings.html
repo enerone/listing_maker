@@ -17,15 +17,21 @@
                     <i class="fas fa-list-alt text-3xl text-blue-600 mr-3"></i>
                     <h1 class="text-2xl font-bold text-gray-900">Listings Creados</h1>
                 </div>
-                <div class="flex items-center space-x-4">
-                    <a href="create-listing.html" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors">
-                        <i class="fas fa-plus mr-2"></i>Crear Nuevo Listing
+                <nav class="flex items-center space-x-4">
+                    <a href="/frontend/index.html" class="text-gray-600 hover:text-blue-600 px-4 py-2 rounded-lg transition-colors">
+                        <i class="fas fa-chart-line mr-2"></i>Dashboard
+                    </a>
+                    <a href="/generator" class="text-gray-600 hover:text-blue-600 px-4 py-2 rounded-lg transition-colors">
+                        <i class="fas fa-plus mr-2"></i>Crear Listing
+                    </a>
+                    <a href="/frontend/listings.html" class="text-blue-600 bg-blue-50 px-4 py-2 rounded-lg transition-colors">
+                        <i class="fas fa-list mr-2"></i>Ver Listings
                     </a>
                     <div class="flex items-center">
                         <div class="w-3 h-3 rounded-full bg-green-400 mr-2" id="statusIndicator"></div>
                         <span class="text-sm text-gray-600" id="systemStatus">Cargando...</span>
                     </div>
-                </div>
+                </nav>
             </div>
         </div>
     </header>
@@ -80,7 +86,7 @@
                                class="w-full md:w-64 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                     </div>
                     <div>
-                        <select id="categoryFilter" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <select id="categoryFilter" title="Filtrar por categoría" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                             <option value="">Todas las categorías</option>
                             <option value="Electronics">Electronics</option>
                             <option value="Sports & Outdoors">Sports & Outdoors</option>
@@ -90,7 +96,7 @@
                         </select>
                     </div>
                     <div>
-                        <select id="statusFilter" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <select id="statusFilter" title="Filtrar por estado" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                             <option value="">Todos los estados</option>
                             <option value="draft">Borrador</option>
                             <option value="published">Publicado</option>
@@ -119,7 +125,7 @@
                 <i class="fas fa-inbox text-4xl text-gray-400 mb-4"></i>
                 <h3 class="text-lg font-medium text-gray-900 mb-2">No hay listings</h3>
                 <p class="text-gray-600 mb-4">Aún no has creado ningún listing. ¡Crea tu primer listing ahora!</p>
-                <a href="create-listing.html" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors">
+                <a href="/generator" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors">
                     <i class="fas fa-plus mr-2"></i>Crear Primer Listing
                 </a>
             </div>
@@ -174,6 +180,6 @@
     </div>
 
     <script src="/static/config.js"></script>
-    <script src="/static/listings.js?v=4"></script>
+    <script src="/static/listings.js?v=5"></script>
 </body>
 </html>

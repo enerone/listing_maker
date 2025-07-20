@@ -902,6 +902,7 @@ async def get_listing_detail(
                 "search_terms": listing.search_terms,
                 "backend_keywords": listing.backend_keywords,
                 "images_order": listing.images_order,
+                "image_ai_prompts": listing.image_ai_prompts,
                 "a_plus_content": listing.a_plus_content,
                 "confidence_score": listing.confidence_score,
                 "processing_notes": listing.processing_notes,
@@ -1254,4 +1255,152 @@ async def enhance_description(
         raise HTTPException(
             status_code=500,
             detail=f"Error interno al mejorar la descripción: {str(e)}"
+        )
+
+@router.post("/{listing_id}/generate-ai-images")
+async def generate_ai_images(
+    listing_id: int,
+    request: Request,
+    db: AsyncSession = Depends(get_db)
+) -> Dict[str, Any]:
+    """
+    Genera imágenes usando Stable Diffusion basado en los prompts de IA del listing
+    """
+    try:
+        # Importar servicio de generación de imágenes
+        from ..services.image_generation_service import get_image_generation_service
+        
+        listing_service = ListingService(db)
+        listing = await listing_service.get_listing(listing_id)
+        
+        if not listing:
+            raise HTTPException(status_code=404, detail=LISTING_NOT_FOUND)
+        
+        # Verificar que el listing tenga prompts de IA
+        image_ai_prompts = listing.image_ai_prompts
+        if not image_ai_prompts:
+            raise HTTPException(
+                status_code=400, 
+                detail="Este listing no tiene prompts de IA para generar imágenes. Ejecuta la generación de listing primero."
+            )
+        
+        logger.info(f"Generando imágenes IA para listing {listing_id}: {listing.product_name}")
+        
+        # Obtener servicio de generación de imágenes
+        image_service = get_image_generation_service()
+        
+        # Generar imágenes usando los prompts IA específicos
+        generated_images = await image_service.generate_images_from_ai_prompts(
+            product_name=listing.product_name,
+            ai_prompts=image_ai_prompts,
+            session_id=f"listing_{listing_id}"
+        )
+        
+        if not generated_images:
+            raise HTTPException(
+                status_code=500,
+                detail="No se pudieron generar imágenes. Verifica que Stable Diffusion esté funcionando correctamente."
+            )
+        
+        # Construir URLs accesibles para las imágenes generadas
+        accessible_images = []
+        base_url = get_base_url(request)
+        
+        for img_info in generated_images:
+            accessible_images.append({
+                "url": f"{base_url}/generated_images/{img_info['filename']}",
+                "filename": img_info['filename'],
+                "prompt_type": img_info.get('prompt_type', 'unknown'),
+                "original_prompt": img_info.get('original_prompt', ''),
+                "enhanced_prompt": img_info.get('prompt', ''),
+                "dimensions": f"{img_info.get('width', 512)}x{img_info.get('height', 512)}",
+                "file_size": img_info.get('file_size', 0),
+                "generated_at": img_info.get('generated_at', datetime.now().isoformat())
+            })
+        
+        # Actualizar el listing con información de las imágenes generadas
+        images_generated_info = {
+            "ai_images_generated": True,
+            "ai_images_count": len(accessible_images),
+            "ai_images_generated_at": datetime.now().isoformat(),
+            "ai_images_filenames": [img['filename'] for img in accessible_images]
+        }
+        
+        # Agregar información a las notas de procesamiento
+        current_notes = listing.processing_notes or []
+        current_notes.append(f"Generadas {len(accessible_images)} imágenes IA usando Stable Diffusion")
+        
+        await listing_service.update_listing(
+            listing_id,
+            {
+                "processing_notes": current_notes
+            },
+            "Imágenes IA generadas con Stable Diffusion"
+        )
+        
+        return {
+            "success": True,
+            "listing_id": listing_id,
+            "product_name": listing.product_name,
+            "generated_images": accessible_images,
+            "total_images": len(accessible_images),
+            "prompts_used": list(image_ai_prompts.keys()),
+            "generation_info": images_generated_info,
+            "message": f"Se generaron {len(accessible_images)} imágenes usando Stable Diffusion"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error generando imágenes IA para listing {listing_id}: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error generando imágenes con IA: {str(e)}"
+        )
+
+@router.get("/ai-images/gallery")
+async def get_ai_images_gallery(
+    request: Request,
+    limit: int = Query(20, description="Número máximo de imágenes a retornar"),
+    offset: int = Query(0, description="Número de imágenes a saltar")
+) -> Dict[str, Any]:
+    """
+    Obtiene una galería de todas las imágenes generadas por IA
+    """
+    try:
+        from ..services.image_generation_service import get_image_generation_service
+        
+        image_service = get_image_generation_service()
+        all_images = image_service.get_generated_images_info()
+        
+        # Paginar resultados
+        paginated_images = all_images[offset:offset + limit]
+        
+        # Construir URLs accesibles
+        base_url = get_base_url(request)
+        accessible_images = []
+        
+        for img_info in paginated_images:
+            accessible_images.append({
+                "url": f"{base_url}/generated_images/{img_info['filename']}",
+                "filename": img_info['filename'],
+                "file_size": img_info.get('file_size', 0),
+                "created_at": img_info.get('created_at', ''),
+                "thumbnail_url": f"{base_url}/generated_images/{img_info['filename']}"  # Same as main for now
+            })
+        
+        return {
+            "images": accessible_images,
+            "total_images": len(all_images),
+            "returned_count": len(accessible_images),
+            "offset": offset,
+            "limit": limit,
+            "has_more": offset + limit < len(all_images)
+        }
+        
+    except Exception as e:
+        logger.error(f"Error obteniendo galería de imágenes IA: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error obteniendo galería: {str(e)}"
         )

@@ -47,7 +47,14 @@ IMPORTANTE: Todas las recomendaciones deben estar completamente en español, con
             prompt = self._build_seo_visual_prompt(product_input)
             
             # Generar respuesta con Ollama
-            parsed_response = await self._generate_response(prompt, structured=True)
+            ollama_response = await self._generate_response(prompt, structured=True)
+            
+            # Extraer datos parseados
+            if ollama_response.get("success") and ollama_response.get("is_structured"):
+                parsed_response = ollama_response["parsed_data"]
+            else:
+                logger.error(f"Error en respuesta de Ollama: {ollama_response.get('error', 'Respuesta no estructurada')}")
+                raise Exception(f"Error generando respuesta SEO: {ollama_response.get('error', 'Respuesta no válida')}")
             
             processing_time = time.time() - start_time
             
@@ -84,102 +91,100 @@ IMPORTANTE: Todas las recomendaciones deben estar completamente en español, con
     
     def _build_seo_visual_prompt(self, product_input: ProductInput) -> str:
         """
-        Construye el prompt especializado para SEO y visual
+        Construye el prompt especializado para SEO y visual (versión simplificada)
         """
         return f"""
-Eres un experto en SEO para Amazon y optimización visual. Analiza la siguiente información del producto y desarrolla una estrategia completa de SEO y contenido visual.
+Analiza este producto de Amazon y genera keywords optimizados en español:
 
-INFORMACIÓN DEL PRODUCTO:
-Nombre: {product_input.product_name}
-Categoría: {product_input.category}
-Precio objetivo: ${product_input.target_price}
-Keywords objetivo: {', '.join(product_input.target_keywords)}
-Cliente objetivo: {product_input.target_customer_description}
-Situaciones de uso: {', '.join(product_input.use_situations)}
-Propuesta de valor: {product_input.value_proposition}
-Ventajas competitivas: {', '.join(product_input.competitive_advantages)}
-Assets disponibles: {', '.join(product_input.available_assets) if product_input.available_assets else 'No especificados'}
-Descripción de assets: {', '.join(product_input.asset_descriptions) if product_input.asset_descriptions else 'No especificada'}
+PRODUCTO:
+- Título: {product_input.product_name}
+- Descripción: {product_input.value_proposition}
+- Categoría: {product_input.category}
+- Cliente objetivo: {product_input.target_customer_description}
+- Keywords iniciales: {', '.join(product_input.target_keywords) if product_input.target_keywords else 'Ninguno'}
 
-TAREA:
-Desarrolla una estrategia completa de SEO y contenido visual que incluya:
+GENERA EXACTAMENTE ESTE FORMATO JSON (sin explicaciones adicionales):
 
-1. **Optimización de keywords** para Amazon A9
-2. **Estrategia de términos de búsqueda** backend y frontend
-3. **Análisis de activos visuales** disponibles
-4. **Recomendaciones de contenido visual** para maximizar conversión
-5. **Plan de optimización SEO** a corto y largo plazo
-
-FORMATO DE RESPUESTA (JSON):
 {{
     "seo_strategy": {{
-        "primary_keywords": ["Keywords", "principales", "de", "alto", "volumen"],
-        "secondary_keywords": ["Keywords", "secundarias", "complementarias"],
-        "long_tail_keywords": ["Keywords", "de", "cola", "larga", "específicas"],
-        "branded_keywords": ["Keywords", "de", "marca", "si", "aplican"],
-        "competitor_keywords": ["Keywords", "de", "competencia", "identificadas"]
+        "primary_keywords": ["3-5 keywords principales con alto volumen de búsqueda"],
+        "secondary_keywords": ["5-8 keywords complementarias"],
+        "long_tail_keywords": ["5-7 keywords de cola larga específicas"],
+        "branded_keywords": ["keywords de marca si aplican"],
+        "competitor_keywords": ["keywords que usan competidores"],
+        "benefit_keywords": ["keywords basadas en beneficios"],
+        "feature_keywords": ["keywords basadas en características"],
+        "use_case_keywords": ["keywords basadas en situaciones de uso"]
     }},
     "search_terms_optimization": {{
-        "frontend_terms": ["Términos", "visibles", "en", "título", "y", "bullets"],
-        "backend_terms": ["Términos", "para", "campos", "de", "búsqueda", "backend"],
-        "seasonal_terms": ["Términos", "estacionales", "relevantes"],
-        "category_specific_terms": ["Términos", "específicos", "de", "la", "categoría"]
+        "frontend_terms": ["términos para título, bullets y descripción"],
+        "backend_terms": ["términos para campos de búsqueda backend"],
+        "seasonal_terms": ["términos estacionales relevantes"],
+        "category_specific_terms": ["términos específicos de la categoría"],
+        "audience_terms": ["términos específicos del público objetivo"],
+        "problem_solving_terms": ["keywords que resuelven problemas"]
+    }},
+    "keyword_analysis": {{
+        "volume_score": "8",
+        "competition_level": "medio",
+        "relevance_score": "9",
+        "conversion_potential": "alto",
+        "priority_ranking": ["lista ordenada de keywords por prioridad"]
+    }},
+    "implementation_strategy": {{
+        "title_keywords": ["keywords prioritarias para el título"],
+        "bullet_keywords": ["keywords para bullet points"],
+        "description_keywords": ["keywords para descripción"],
+        "backend_keywords": ["keywords para campos ocultos"],
+        "ppc_keywords": ["keywords para campañas PPC"]
     }},
     "visual_assets_analysis": {{
-        "available_assets": ["Lista", "de", "assets", "disponibles", "analizados"],
-        "asset_quality_assessment": "Evaluación de calidad de los assets existentes",
-        "missing_visual_content": ["Contenido", "visual", "faltante", "crítico"],
-        "visual_hierarchy_recommendation": "Recomendación de jerarquía visual"
+        "available_assets": ["análisis de assets disponibles"],
+        "asset_quality_assessment": "evaluación de calidad",
+        "missing_visual_content": ["contenido visual faltante"],
+        "visual_hierarchy_recommendation": "recomendación de jerarquía visual"
     }},
     "image_strategy": {{
-        "main_image_recommendations": "Recomendaciones para imagen principal",
+        "main_image_recommendations": "recomendaciones para imagen principal",
         "secondary_images_plan": [
-            {{
-                "slot": "Imagen 2",
-                "purpose": "Propósito de la imagen",
-                "content_type": "Tipo de contenido recomendado"
-            }}
+            {{"slot": "Imagen 2", "purpose": "mostrar características", "content_type": "infografía"}},
+            {{"slot": "Imagen 3", "purpose": "demostrar beneficios", "content_type": "lifestyle"}}
         ],
-        "lifestyle_photography": "Estrategia de fotografía lifestyle",
-        "infographic_needs": ["Necesidades", "de", "infografías", "específicas"]
+        "lifestyle_photography": "estrategia de fotografía lifestyle",
+        "infographic_needs": ["necesidades de infografías"]
     }},
     "a_plus_content_strategy": {{
-        "content_modules": ["Módulos", "de", "contenido", "A+", "recomendados"],
-        "visual_storytelling": "Estrategia de storytelling visual",
-        "comparison_charts": "Recomendaciones para charts comparativos",
-        "lifestyle_integration": "Integración de imágenes lifestyle"
+        "content_modules": ["módulos de contenido A+ optimizados"],
+        "visual_storytelling": "estrategia de storytelling visual",
+        "comparison_charts": "recomendaciones para charts comparativos",
+        "lifestyle_integration": "integración de imágenes lifestyle"
     }},
     "seo_bullets": [
-        "🔍 Bullet optimizado con keywords principales",
-        "📊 Bullet con términos de búsqueda específicos",
-        "🎯 Bullet con keywords de cola larga",
-        "⭐ Bullet con términos de beneficio clave",
-        "🏆 Bullet con diferenciadores SEO"
+        "Bullet optimizado con keywords principales",
+        "Bullet con términos de búsqueda específicos",
+        "Bullet con keywords de cola larga",
+        "Bullet con términos de beneficio clave",
+        "Bullet con diferenciadores SEO"
     ],
     "optimization_timeline": {{
-        "immediate_actions": ["Acciones", "inmediatas", "de", "SEO"],
-        "30_day_optimizations": ["Optimizaciones", "a", "30", "días"],
-        "long_term_strategy": ["Estrategia", "a", "largo", "plazo"]
+        "immediate_actions": ["optimizar título y descripción", "implementar keywords en bullets"],
+        "30_day_optimizations": ["análisis de rendimiento", "optimización basada en datos"],
+        "long_term_strategy": ["expansión de keywords", "optimización competitiva continua"]
     }},
     "performance_tracking": {{
-        "keywords_to_monitor": ["Keywords", "clave", "para", "monitorear"],
-        "ranking_targets": "Objetivos de ranking específicos",
-        "conversion_metrics": ["Métricas", "de", "conversión", "a", "trackear"]
+        "keywords_to_monitor": ["keywords principales para trackear"],
+        "ranking_targets": "objetivos de posicionamiento",
+        "conversion_metrics": ["CTR por keyword", "conversión por término", "posición orgánica"]
     }},
     "recommendations": [
-        "Recomendaciones específicas para mejorar SEO",
-        "Sugerencias para optimizar contenido visual",
-        "Próximos pasos para implementar la estrategia"
+        "implementación específica de keywords",
+        "tests A/B de títulos",
+        "estrategias para mejorar ranking",
+        "próximos pasos de optimización"
     ]
 }}
 
-INSTRUCCIONES IMPORTANTES:
-- Usa las keywords objetivo proporcionadas como base, pero expándelas estratégicamente
-- Considera la categoría del producto para keywords específicas del nicho
-- Las recomendaciones visuales deben ser específicas y prácticas
-- Incluye términos que los clientes realmente buscan en Amazon
-- Prioriza keywords con potencial de conversión alta
-- Las recomendaciones deben ser implementables con el presupuesto típico de un seller
+IMPORTANTE: Genera keywords específicos para el mercado hispanohablante, enfócate en términos que los usuarios realmente buscan en Amazon en español.
 """
     
     def _calculate_seo_confidence(self, data: Dict[str, Any]) -> float:

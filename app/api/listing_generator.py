@@ -11,7 +11,7 @@ import json
 from datetime import datetime
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..agents.seo_visual_agent import SEOVisualAgent
+from ..agents.simple_seo_agent import SimpleSEOAgent
 from ..agents.amazon_copywriter_agent import AmazonCopywriterAgent
 from ..models import ProductInput, ProductCategory
 from ..database import get_db
@@ -91,8 +91,8 @@ async def generate_keywords(request: KeywordGenerationRequest):
         )
         
         # Instanciar y ejecutar agente SEO
-        seo_agent = SEOVisualAgent()
-        logger.info("Ejecutando agente SEO...")
+        seo_agent = SimpleSEOAgent()
+        logger.info("Ejecutando agente SEO simplificado...")
         seo_result = await seo_agent.process(product_input)
         
         logger.info(f"Resultado SEO - Status: {seo_result.status}, Confidence: {seo_result.confidence}")
@@ -101,24 +101,14 @@ async def generate_keywords(request: KeywordGenerationRequest):
         if seo_result.status == "success":
             # Extraer keywords del resultado
             seo_data = seo_result.data
-            primary_keywords = seo_data.get("seo_strategy", {}).get("primary_keywords", [])
-            secondary_keywords = seo_data.get("seo_strategy", {}).get("secondary_keywords", [])
-            long_tail_keywords = seo_data.get("seo_strategy", {}).get("long_tail_keywords", [])
-            
-            all_keywords = primary_keywords + secondary_keywords + long_tail_keywords
-            
-            # Combinar con keywords manuales
+            all_keywords = seo_data.get("seo_strategy", {}).get("all_keywords", [])
             if request.manual_keywords:
                 all_keywords = list(set(all_keywords + request.manual_keywords))
-            
             return {
                 "success": True,
                 "keywords": all_keywords[:20],  # Limitar a 20 keywords
-                "primary_keywords": primary_keywords,
-                "secondary_keywords": secondary_keywords,
-                "long_tail_keywords": long_tail_keywords,
                 "confidence": seo_result.confidence,
-                "agent": "seo_visual_agent"
+                "agent": "simple_seo_agent"
             }
         else:
             raise HTTPException(status_code=500, detail=f"Error en SEO agent: {seo_result.notes}")

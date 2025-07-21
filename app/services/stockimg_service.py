@@ -1,5 +1,6 @@
 """
 Servicio de integración con Stockimg.ai para generación de imágenes
+Con fallback a servicios alternativos
 """
 import os
 import logging
@@ -13,16 +14,23 @@ logger = logging.getLogger(__name__)
 
 class StockimgService:
     """
-    Servicio para generar imágenes usando la API de Stockimg.ai
+    Servicio para generar imágenes usando la API de Stockimg.ai con fallbacks
     """
     
     def __init__(self):
-        self.api_key = "OsM9sVIWDAD8m7EZXL4CWBGzzeKxbCCvK4wc4Vw6IbPwpT5PcyBOLMbBMWApvOmF"
-        self.base_url = "https://api.stockimg.ai"
+        # API de Stockimg.ai
+        self.api_key = "ErPtrkevzEK2w4x4ctp6fmSTzxjN4IDtKcaMXKg9PjV6e9vtimSHRJOiL8bauyFS" 
         self.images_dir = "stockimg_generated"
-        
-        # Crear directorio de imágenes si no existe
         os.makedirs(self.images_dir, exist_ok=True)
+        
+        # Importar el servicio híbrido como fallback
+        try:
+            from .hybrid_image_service import get_hybrid_image_service
+            self.hybrid_service = get_hybrid_image_service()
+            logger.info("✅ Servicio híbrido cargado correctamente")
+        except Exception as e:
+            self.hybrid_service = None
+            logger.warning(f"⚠️ Servicio híbrido no disponible: {str(e)}")
         
         logger.info(f"🎨 StockimgService inicializado - Directorio: {self.images_dir}")
     
@@ -48,56 +56,101 @@ class StockimgService:
         try:
             logger.info(f"🎨 Generando imagen con Stockimg.ai - Prompt: {prompt[:100]}...")
             
-            # Preparar headers
-            headers = {
-                "Authorization": f"Bearer {self.api_key}",
-                "Content-Type": "application/json"
-            }
+            # Saltamos la verificación por ahora debido a Cloudflare
+            logger.info("ℹ️ Saltando verificación de API key debido a protección Cloudflare")
             
-            # Mapear estilos internos a estilos de Stockimg.ai
-            stockimg_style = self._map_style_to_stockimg(style)
+            # Primero intentar con Stockimg.ai directamente (implementación simplificada)
+            result = await self._try_stockimg_direct(prompt, style, width, height)
+            if result:
+                return result
             
-            # Preparar payload para la API
-            payload = {
-                "prompt": prompt,
-                "style": stockimg_style,
-                "width": width,
-                "height": height,
-                "format": "jpeg",
-                "quality": "high"
-            }
-            
-            # Hacer petición a la API
-            async with httpx.AsyncClient(timeout=60.0) as client:
-                response = await client.post(
-                    f"{self.base_url}/v1/generate",
-                    headers=headers,
-                    json=payload
+            # Si Stockimg.ai falla, usar el servicio híbrido como fallback
+            if self.hybrid_service:
+                logger.info("🔄 Stockimg.ai falló, usando servicio híbrido como fallback...")
+                return await self.hybrid_service.generate_image(
+                    prompt=prompt,
+                    style=style,
+                    width=width,
+                    height=height,
+                    preferred_service="stability"  # Usar Stability AI como fallback principal
                 )
+            else:
+                logger.error("❌ No hay servicios de fallback disponibles")
+                return None
                 
-                if response.status_code == 200:
-                    result = response.json()
-                    
-                    # Descargar y guardar la imagen
-                    image_info = await self._download_and_save_image(
-                        result.get("image_url"),
-                        prompt,
-                        style
-                    )
-                    
-                    if image_info:
-                        logger.info(f"✅ Imagen generada exitosamente: {image_info['filename']}")
-                        return image_info
-                    else:
-                        logger.error("❌ Error descargando imagen generada")
-                        return None
-                        
-                else:
-                    logger.error(f"❌ Error en API Stockimg.ai: {response.status_code} - {response.text}")
-                    return None
-                    
         except Exception as e:
             logger.error(f"❌ Error generando imagen con Stockimg.ai: {str(e)}")
+            return None
+    
+    async def _try_stockimg_direct(
+        self, 
+        prompt: str, 
+        style: str, 
+        width: int, 
+        height: int
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Intenta generar imagen directamente con Stockimg.ai (versión simplificada)
+        """
+        try:
+            # URLs base a probar
+            base_urls = [
+                "https://api.stockimg.ai",
+                "https://stockimg.ai/api"
+            ]
+            # Preparar headers simplificados
+            headers = {
+                "Authorization": f"Bearer {self.api_key}",
+                "Content-Type": "application/json",
+                "User-Agent": "StockimgAI-Client/1.0"
+            }
+            
+            # Payload simplificado
+            payload = {
+                "prompt": prompt,
+                "style": self._map_style_to_stockimg(style),
+                "width": width,
+                "height": height
+            }
+            
+            # Hacer petición simplificada a Stockimg.ai
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                # Intentar solo los endpoints más prometedores
+                endpoints = ["/v1/generate", "/generate"]
+                
+                for base_url in base_urls:
+                    for endpoint in endpoints:
+                        try:
+                            url = f"{base_url}{endpoint}"
+                            logger.info(f"🔄 Probando: {url}")
+                            
+                            response = await client.post(url, headers=headers, json=payload)
+                            
+                            if response.status_code == 200:
+                                result = response.json()
+                                logger.info(f"✅ Respuesta exitosa de Stockimg.ai: {result}")
+                                
+                                # Extraer URL de imagen
+                                image_url = (result.get("image_url") or 
+                                           result.get("url") or 
+                                           result.get("output_url"))
+                                
+                                if image_url:
+                                    return await self._download_and_save_image(
+                                        image_url, prompt, style
+                                    )
+                            else:
+                                logger.debug(f"❌ Error {response.status_code} en {url}")
+                                
+                        except Exception as e:
+                            logger.debug(f"Error en {url}: {str(e)}")
+                            continue
+            
+            logger.warning("⚠️ No se pudo conectar con Stockimg.ai")
+            return None
+            
+        except Exception as e:
+            logger.error(f"❌ Error intentando Stockimg.ai directo: {str(e)}")
             return None
     
     def _map_style_to_stockimg(self, style: str) -> str:
@@ -272,6 +325,48 @@ class StockimgService:
             
         except Exception as e:
             logger.error(f"❌ Error en limpieza de imágenes Stockimg: {str(e)}")
+    
+    async def verify_api_key(self) -> bool:
+        """
+        Verifica si la API key es válida haciendo una petición simple
+        """
+        try:
+            logger.info("🔍 Verificando validez de API key de Stockimg.ai...")
+            
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                # Probar diferentes endpoints de verificación
+                test_endpoints = [
+                    ("https://stockimg.ai/api/user", {"Authorization": f"Bearer {self.api_key}"}),
+                    ("https://api.stockimg.ai/user", {"Authorization": f"Bearer {self.api_key}"}),
+                    ("https://stockimg.ai/api/v1/user", {"X-API-Key": self.api_key}),
+                    ("https://api.stockimg.ai/v1/user", {"X-API-Key": self.api_key}),
+                ]
+                
+                for url, headers in test_endpoints:
+                    try:
+                        logger.info(f"🔍 Probando verificación en: {url}")
+                        response = await client.get(url, headers=headers)
+                        logger.info(f"📡 Status: {response.status_code}")
+                        
+                        if response.status_code == 200:
+                            logger.info("✅ API key válida!")
+                            return True
+                        elif response.status_code in [401, 403]:
+                            error_text = response.text[:300]
+                            logger.error(f"❌ API key inválida en {url}: {error_text}")
+                        else:
+                            logger.info(f"ℹ️ Endpoint {url} devolvió: {response.status_code}")
+                            
+                    except Exception as e:
+                        logger.debug(f"Error verificando {url}: {str(e)}")
+                        continue
+                
+                logger.error("❌ No se pudo verificar la validez de la API key")
+                return False
+                
+        except Exception as e:
+            logger.error(f"❌ Error verificando API key: {str(e)}")
+            return False
 
 
 # Instancia global del servicio

@@ -11,7 +11,12 @@ class OllamaService:
     def __init__(self, model_name: str = "qwen2.5:latest", host: str = "http://localhost:11434"):
         self.model_name = model_name
         self.host = host
-        self.client = ollama.Client(host=host)
+        try:
+            self.client = ollama.Client(host=host)
+            logger.info(f"Cliente Ollama inicializado - Modelo: {model_name}, Host: {host}")
+        except Exception as e:
+            logger.error(f"Error inicializando cliente Ollama: {str(e)}")
+            self.client = None
         
     async def generate_response(
         self, 
@@ -24,13 +29,20 @@ class OllamaService:
         Genera una respuesta usando Ollama
         """
         try:
+            if not self.client:
+                raise Exception("Cliente Ollama no inicializado correctamente")
+                
             start_time = datetime.now()
             
+            # Preparar mensajes
             messages = []
             if system_prompt:
                 messages.append({"role": "system", "content": system_prompt})
             messages.append({"role": "user", "content": prompt})
             
+            logger.debug(f"Enviando prompt a Ollama: {prompt[:100]}...")
+            
+            # Llamar a Ollama de forma más simple
             response = await asyncio.wait_for(
                 asyncio.to_thread(
                     self.client.chat,
@@ -38,20 +50,40 @@ class OllamaService:
                     messages=messages,
                     options={
                         "temperature": temperature,
-                        "num_predict": max_tokens or 2000,  # Limitar tokens para evitar respuestas muy largas
-                        "stop": ["```", "\n\n---", "END_RESPONSE"]  # Añadir stop tokens
+                        "num_predict": max_tokens or 1000
                     }
                 ),
-                timeout=30.0  # Reducir timeout a 30 segundos
+                timeout=60.0  # Aumentar timeout
             )
             
             processing_time = (datetime.now() - start_time).total_seconds()
             
-            # Extraer contenido de la respuesta
+            # Extraer contenido de la respuesta de forma más robusta
             content = ""
             
-            if isinstance(response, dict) and 'message' in response:
-                content = response['message'].get('content', '')
+            try:
+                # Intentar diferentes formas de extraer el contenido
+                if hasattr(response, 'message'):
+                    message = getattr(response, 'message')
+                    if hasattr(message, 'content'):
+                        content = getattr(message, 'content')
+                    else:
+                        content = str(message)
+                elif isinstance(response, dict):
+                    if 'message' in response and isinstance(response['message'], dict):
+                        content = response['message'].get('content', '')
+                    elif 'response' in response:
+                        content = response['response']
+                    else:
+                        content = str(response)
+                else:
+                    content = str(response)
+                    
+            except Exception as e:
+                logger.warning(f"Error extrayendo contenido: {e}")
+                content = str(response)
+            
+            logger.debug(f"Respuesta de Ollama: {content[:200]}...")
             
             return {
                 "success": True,
@@ -61,8 +93,16 @@ class OllamaService:
                 "tokens_used": 0
             }
             
+        except asyncio.TimeoutError:
+            logger.error("Timeout al esperar respuesta de Ollama")
+            return {
+                "success": False,
+                "error": "Timeout al esperar respuesta de Ollama",
+                "processing_time": 0,
+                "content": None
+            }
         except Exception as e:
-            logger.error(f"Error en generación Ollama: {str(e)}")
+            logger.error(f"Error en generación Ollama: {str(e)}", exc_info=True)
             return {
                 "success": False,
                 "error": str(e),
@@ -121,6 +161,10 @@ class OllamaService:
         Verifica si el modelo está disponible
         """
         try:
+            if not self.client:
+                logger.error("Cliente Ollama no inicializado")
+                return False
+                
             models = await asyncio.to_thread(self.client.list)
             available_models = [model['name'] for model in models.get('models', [])]
             return self.model_name in available_models
@@ -133,6 +177,10 @@ class OllamaService:
         Descarga el modelo si no está disponible
         """
         try:
+            if not self.client:
+                logger.error("Cliente Ollama no inicializado")
+                return False
+                
             if not await self.check_model_availability():
                 logger.info(f"Descargando modelo {self.model_name}...")
                 await asyncio.to_thread(self.client.pull, self.model_name)

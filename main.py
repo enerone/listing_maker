@@ -6,11 +6,15 @@ from fastapi.templating import Jinja2Templates
 import logging
 from contextlib import asynccontextmanager
 import os
+from dotenv import load_dotenv
 
 from app.api.listings import router as listings_router
 from app.api.listing_generator import router as generator_router
 from app.database import create_tables
 from app.services.ollama_service import get_ollama_service
+
+# Cargar variables de entorno desde .env
+load_dotenv()
 
 # Configurar logging
 logging.basicConfig(

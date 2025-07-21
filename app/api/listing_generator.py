@@ -16,6 +16,7 @@ from ..agents.amazon_copywriter_agent import AmazonCopywriterAgent
 from ..models import ProductInput, ProductCategory
 from ..database import get_db
 from ..services.image_generation_service import get_image_generation_service
+from ..services.stockimg_service import get_stockimg_service
 
 logger = logging.getLogger(__name__)
 
@@ -991,4 +992,95 @@ async def get_session_images(session_id: str):
         
     except Exception as e:
         logger.error(f"❌ Error obteniendo imágenes de sesión: {str(e)}")
+        return {"success": False, "error": str(e), "images": []}
+
+
+# === ENDPOINTS PARA STOCKIMG.AI ===
+
+class StockimgGenerationRequest(BaseModel):
+    prompt: str
+    style: Optional[str] = "product_photography"
+    width: Optional[int] = 1024
+    height: Optional[int] = 1024
+
+@router.post("/api/generate-stockimg")
+async def generate_stockimg_image(request: StockimgGenerationRequest):
+    """Genera una imagen usando Stockimg.ai"""
+    try:
+        logger.info(f"🎨 Generando imagen con Stockimg.ai - Prompt: {request.prompt[:50]}...")
+        
+        stockimg_service = get_stockimg_service()
+        
+        image_info = await stockimg_service.generate_image(
+            prompt=request.prompt,
+            style=request.style or "product_photography",
+            width=request.width or 1024,
+            height=request.height or 1024
+        )
+        
+        if image_info:
+            logger.info(f"✅ Imagen Stockimg generada: {image_info['filename']}")
+            return {
+                "success": True, 
+                "image": image_info,
+                "message": "Imagen generada exitosamente con Stockimg.ai"
+            }
+        else:
+            return {
+                "success": False, 
+                "error": "No se pudo generar la imagen con Stockimg.ai"
+            }
+            
+    except Exception as e:
+        logger.error(f"❌ Error generando imagen Stockimg: {str(e)}")
+        return {"success": False, "error": str(e)}
+
+@router.post("/api/generate-stockimg-batch")
+async def generate_stockimg_batch(prompts: Dict[str, str], product_name: str = "Unknown"):
+    """Genera múltiples imágenes usando Stockimg.ai desde prompts de IA"""
+    try:
+        logger.info(f"🎨 Generando lote de imágenes Stockimg para: {product_name}")
+        
+        stockimg_service = get_stockimg_service()
+        
+        images = await stockimg_service.generate_images_from_prompts(
+            prompts=prompts,
+            product_name=product_name
+        )
+        
+        if images:
+            logger.info(f"✅ {len(images)} imágenes Stockimg generadas")
+            return {
+                "success": True, 
+                "images": images, 
+                "total_generated": len(images),
+                "service": "stockimg.ai",
+                "product_name": product_name
+            }
+        else:
+            return {
+                "success": False, 
+                "error": "No se pudieron generar imágenes con Stockimg.ai"
+            }
+            
+    except Exception as e:
+        logger.error(f"❌ Error generando lote Stockimg: {str(e)}")
+        return {"success": False, "error": str(e)}
+
+@router.get("/api/stockimg-images")
+async def get_stockimg_images():
+    """Obtiene la lista de todas las imágenes generadas con Stockimg.ai"""
+    try:
+        stockimg_service = get_stockimg_service()
+        images_info = stockimg_service.get_generated_images_info()
+        
+        return {
+            "success": True, 
+            "images": images_info, 
+            "total": len(images_info),
+            "service": "stockimg.ai"
+        }
+        
+    except Exception as e:
+        logger.error(f"❌ Error obteniendo imágenes Stockimg: {str(e)}")
         return {"success": False, "error": str(e), "images": []}

@@ -96,6 +96,11 @@ app.add_middleware(
 app.mount("/downloaded_images", StaticFiles(directory=IMAGES_DIR), name="images")
 app.mount("/generated_images", StaticFiles(directory=GENERATED_IMAGES_DIR), name="generated_images")
 
+# Montar directorio de imágenes de Stockimg.ai
+STOCKIMG_DIR = "stockimg_generated"
+os.makedirs(STOCKIMG_DIR, exist_ok=True)
+app.mount("/stockimg_generated", StaticFiles(directory=STOCKIMG_DIR), name="stockimg_images")
+
 # Montar archivos estáticos del frontend
 if os.path.exists("frontend"):
     app.mount("/static", StaticFiles(directory="frontend"), name="static")

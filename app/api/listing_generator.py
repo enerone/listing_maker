@@ -8,14 +8,16 @@ from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
 import logging
 import json
+import os
 from datetime import datetime
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..agents.seo_visual_agent import SEOVisualAgent
+from ..agents.simple_seo_agent import SimpleSEOAgent
 from ..agents.amazon_copywriter_agent import AmazonCopywriterAgent
 from ..models import ProductInput, ProductCategory
 from ..database import get_db
 from ..services.image_generation_service import get_image_generation_service
+from ..services.stockimg_service import get_stockimg_service
 
 logger = logging.getLogger(__name__)
 
@@ -60,11 +62,38 @@ listing_sessions = {}
 
 @router.get("/generator", response_class=HTMLResponse)
 async def listing_generator_page(request: Request):
-    """Página principal del generador de listings"""
-    return templates.TemplateResponse("listing_generator.html", {
-        "request": request,
-        "title": "Generador de Listings Amazon"
-    })
+    """Página principal del generador de listings - Requiere autenticación"""
+    # Usar el sistema de templates de Jinja2 para renderizar correctamente las variables
+    try:
+        # Renderizar el template con las variables necesarias
+        return templates.TemplateResponse("listing_generator.html", {
+            "request": request,
+            "title": "🚀 Generador de Listings Amazon"
+        })
+        
+    except Exception as e:
+        logger.error(f"Error renderizando template: {str(e)}")
+        # Fallback simple en caso de error
+        error_html = """
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>🚀 Generador de Listings Amazon</title>
+        </head>
+        <body>
+            <h1>Error cargando el generador</h1>
+            <p>Por favor, intenta de nuevo más tarde.</p>
+            <script>
+                const token = localStorage.getItem('access_token');
+                if (!token) {
+                    alert('⚠️ Necesitas iniciar sesión para acceder al generador');
+                    window.location.href = '/auth';
+                }
+            </script>
+        </body>
+        </html>
+        """
+        return HTMLResponse(content=error_html)
 
 @router.post("/api/generate-keywords")
 async def generate_keywords(request: KeywordGenerationRequest):
@@ -90,8 +119,8 @@ async def generate_keywords(request: KeywordGenerationRequest):
         )
         
         # Instanciar y ejecutar agente SEO
-        seo_agent = SEOVisualAgent()
-        logger.info("Ejecutando agente SEO...")
+        seo_agent = SimpleSEOAgent()
+        logger.info("Ejecutando agente SEO simplificado...")
         seo_result = await seo_agent.process(product_input)
         
         logger.info(f"Resultado SEO - Status: {seo_result.status}, Confidence: {seo_result.confidence}")
@@ -100,24 +129,14 @@ async def generate_keywords(request: KeywordGenerationRequest):
         if seo_result.status == "success":
             # Extraer keywords del resultado
             seo_data = seo_result.data
-            primary_keywords = seo_data.get("seo_strategy", {}).get("primary_keywords", [])
-            secondary_keywords = seo_data.get("seo_strategy", {}).get("secondary_keywords", [])
-            long_tail_keywords = seo_data.get("seo_strategy", {}).get("long_tail_keywords", [])
-            
-            all_keywords = primary_keywords + secondary_keywords + long_tail_keywords
-            
-            # Combinar con keywords manuales
+            all_keywords = seo_data.get("seo_strategy", {}).get("all_keywords", [])
             if request.manual_keywords:
                 all_keywords = list(set(all_keywords + request.manual_keywords))
-            
             return {
                 "success": True,
                 "keywords": all_keywords[:20],  # Limitar a 20 keywords
-                "primary_keywords": primary_keywords,
-                "secondary_keywords": secondary_keywords,
-                "long_tail_keywords": long_tail_keywords,
                 "confidence": seo_result.confidence,
-                "agent": "seo_visual_agent"
+                "agent": "simple_seo_agent"
             }
         else:
             raise HTTPException(status_code=500, detail=f"Error en SEO agent: {seo_result.notes}")
@@ -131,7 +150,10 @@ async def generate_keywords(request: KeywordGenerationRequest):
         }
 
 @router.post("/api/generate-listing")
-async def generate_listing(request: ListingGenerationRequest, db: AsyncSession = Depends(get_db)):
+async def generate_listing(
+    request: ListingGenerationRequest, 
+    db: AsyncSession = Depends(get_db)
+):
     """Genera el listing completo usando Amazon Copywriter Agent y lo guarda en la base de datos"""
     try:
         logger.info(f"🖋️ Generando listing para: {request.title}")
@@ -303,7 +325,8 @@ async def generate_listing(request: ListingGenerationRequest, db: AsyncSession =
                 db_listing = await listing_service.create_listing(
                     product_input, 
                     processed_listing, 
-                    agent_responses
+                    agent_responses,
+                    1  # Usuario admin por defecto
                 )
                 
                 # Actualizar sesión con ID de base de datos
@@ -751,7 +774,10 @@ async def _generate_suggestions(listing_data: Dict[str, Any], product_data: Dict
 # === ENDPOINT PARA GUARDAR LISTING ===
 
 @router.post("/api/save-listing")
-async def save_listing(request: SaveListingRequest, db: AsyncSession = Depends(get_db)):
+async def save_listing(
+    request: SaveListingRequest, 
+    db: AsyncSession = Depends(get_db)
+):
     """Guarda el listing actual de la sesión en la base de datos"""
     try:
         session_id = request.session_id
@@ -904,7 +930,8 @@ async def save_listing(request: SaveListingRequest, db: AsyncSession = Depends(g
             db_listing = await listing_service.create_listing(
                 product_input, 
                 processed_listing, 
-                agent_responses
+                agent_responses,
+                1  # Usuario admin por defecto
             )
             
             # Actualizar sesión con ID de base de datos
@@ -991,4 +1018,95 @@ async def get_session_images(session_id: str):
         
     except Exception as e:
         logger.error(f"❌ Error obteniendo imágenes de sesión: {str(e)}")
+        return {"success": False, "error": str(e), "images": []}
+
+
+# === ENDPOINTS PARA STOCKIMG.AI ===
+
+class StockimgGenerationRequest(BaseModel):
+    prompt: str
+    style: Optional[str] = "product_photography"
+    width: Optional[int] = 1024
+    height: Optional[int] = 1024
+
+@router.post("/api/generate-stockimg")
+async def generate_stockimg_image(request: StockimgGenerationRequest):
+    """Genera una imagen usando Stockimg.ai"""
+    try:
+        logger.info(f"🎨 Generando imagen con Stockimg.ai - Prompt: {request.prompt[:50]}...")
+        
+        stockimg_service = get_stockimg_service()
+        
+        image_info = await stockimg_service.generate_image(
+            prompt=request.prompt,
+            style=request.style or "product_photography",
+            width=request.width or 1024,
+            height=request.height or 1024
+        )
+        
+        if image_info:
+            logger.info(f"✅ Imagen Stockimg generada: {image_info['filename']}")
+            return {
+                "success": True, 
+                "image": image_info,
+                "message": "Imagen generada exitosamente con Stockimg.ai"
+            }
+        else:
+            return {
+                "success": False, 
+                "error": "No se pudo generar la imagen con Stockimg.ai"
+            }
+            
+    except Exception as e:
+        logger.error(f"❌ Error generando imagen Stockimg: {str(e)}")
+        return {"success": False, "error": str(e)}
+
+@router.post("/api/generate-stockimg-batch")
+async def generate_stockimg_batch(prompts: Dict[str, str], product_name: str = "Unknown"):
+    """Genera múltiples imágenes usando Stockimg.ai desde prompts de IA"""
+    try:
+        logger.info(f"🎨 Generando lote de imágenes Stockimg para: {product_name}")
+        
+        stockimg_service = get_stockimg_service()
+        
+        images = await stockimg_service.generate_images_from_prompts(
+            prompts=prompts,
+            product_name=product_name
+        )
+        
+        if images:
+            logger.info(f"✅ {len(images)} imágenes Stockimg generadas")
+            return {
+                "success": True, 
+                "images": images, 
+                "total_generated": len(images),
+                "service": "stockimg.ai",
+                "product_name": product_name
+            }
+        else:
+            return {
+                "success": False, 
+                "error": "No se pudieron generar imágenes con Stockimg.ai"
+            }
+            
+    except Exception as e:
+        logger.error(f"❌ Error generando lote Stockimg: {str(e)}")
+        return {"success": False, "error": str(e)}
+
+@router.get("/api/stockimg-images")
+async def get_stockimg_images():
+    """Obtiene la lista de todas las imágenes generadas con Stockimg.ai"""
+    try:
+        stockimg_service = get_stockimg_service()
+        images_info = stockimg_service.get_generated_images_info()
+        
+        return {
+            "success": True, 
+            "images": images_info, 
+            "total": len(images_info),
+            "service": "stockimg.ai"
+        }
+        
+    except Exception as e:
+        logger.error(f"❌ Error obteniendo imágenes Stockimg: {str(e)}")
         return {"success": False, "error": str(e), "images": []}

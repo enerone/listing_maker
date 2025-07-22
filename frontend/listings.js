@@ -1012,7 +1012,21 @@ async function showListingModal(listingId) {
                                     
                                     return Object.entries(parsedPrompts).map(([type, prompt]) => `
                                         <div class="bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 p-3 rounded-lg">
-                                            <h5 class="font-medium text-purple-900 mb-2">${promptTypes[type] || type}</h5>
+                                            <div class="flex justify-between items-start mb-2">
+                                                <h5 class="font-medium text-purple-900">${promptTypes[type] || type}</h5>
+                                                <div class="flex space-x-2">
+                                                    <button onclick="copyPromptToClipboard('${prompt.replace(/'/g, "\\'")}', '${type}')" 
+                                                            class="text-xs bg-purple-100 hover:bg-purple-200 text-purple-700 px-2 py-1 rounded transition-colors"
+                                                            title="Copiar prompt">
+                                                        <i class="fas fa-copy"></i> Copiar
+                                                    </button>
+                                                    <button onclick="generateStockimgFromModal('${prompt.replace(/'/g, "\\'")}', '${type}')" 
+                                                            class="text-xs bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-3 py-1 rounded transition-all duration-300"
+                                                            title="Generar con Stockimg.ai">
+                                                        <i class="fas fa-image mr-1"></i>Stockimg.ai
+                                                    </button>
+                                                </div>
+                                            </div>
                                             <p class="text-gray-700 text-sm bg-white p-2 rounded border">${prompt || 'N/A'}</p>
                                         </div>
                                     `).join('');
@@ -1382,4 +1396,136 @@ function showFullImage(url) {
         }
     };
     document.body.appendChild(overlay);
+}
+
+// === FUNCIONES PARA STOCKIMG.AI ===
+
+function copyPromptToClipboard(prompt, type) {
+    navigator.clipboard.writeText(prompt).then(() => {
+        showToast(`Prompt "${type}" copiado al portapapeles`, 'success');
+    }).catch(() => {
+        showToast('Error al copiar prompt', 'error');
+    });
+}
+
+async function generateStockimgFromModal(prompt, type) {
+    try {
+        showToast(`🎨 Generando imagen "${type}" con Stockimg.ai...`, 'info');
+        
+        const response = await fetch('/api/generate-stockimg', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                prompt: prompt,
+                style: type,
+                width: 1024,
+                height: 1024
+            })
+        });
+
+        const result = await response.json();
+        
+        if (result.success) {
+            showToast(`✅ ¡Imagen "${type}" generada exitosamente!`, 'success');
+            showStockimgResultModal(result.image, type);
+        } else {
+            showToast(`❌ Error: ${result.error}`, 'error');
+        }
+        
+    } catch (error) {
+        showToast(`❌ Error de conexión: ${error.message}`, 'error');
+    }
+}
+
+function showStockimgResultModal(imageInfo, promptType) {
+    // Crear modal dinámicamente si no existe
+    let modal = document.getElementById('stockimgModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'stockimgModal';
+        modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+        document.body.appendChild(modal);
+    }
+
+    modal.innerHTML = `
+        <div class="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-90vh overflow-y-auto">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-semibold text-gray-900">
+                        🎨 Imagen generada con Stockimg.ai
+                    </h3>
+                    <button onclick="closeStockimgModal()" 
+                            class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+                
+                <div class="text-center mb-4">
+                    <div class="inline-block bg-gradient-to-r from-blue-500 to-purple-600 text-white px-3 py-1 rounded-full text-sm font-medium mb-2">
+                        ${promptType.replace('_', ' ').toUpperCase()}
+                    </div>
+                </div>
+                
+                <div class="border rounded-lg overflow-hidden mb-4">
+                    <img src="${imageInfo.url}" alt="${promptType}" class="w-full h-auto object-contain" style="max-height: 400px;">
+                </div>
+                
+                <div class="bg-gray-50 p-4 rounded-lg mb-4">
+                    <h4 class="font-medium text-gray-900 mb-2">Información de la imagen:</h4>
+                    <div class="text-sm text-gray-600 space-y-1">
+                        <p><strong>Dimensiones:</strong> ${imageInfo.width}x${imageInfo.height}px</p>
+                        <p><strong>Tamaño:</strong> ${(imageInfo.file_size / 1024).toFixed(1)} KB</p>
+                        <p><strong>Generado:</strong> ${new Date(imageInfo.generated_at).toLocaleString()}</p>
+                        <p><strong>Servicio:</strong> Stockimg.ai</p>
+                    </div>
+                </div>
+                
+                <div class="bg-blue-50 p-3 rounded-lg mb-4">
+                    <h5 class="font-medium text-blue-900 mb-1">Prompt utilizado:</h5>
+                    <p class="text-blue-800 text-sm">${imageInfo.prompt}</p>
+                </div>
+                
+                <div class="flex justify-center space-x-3">
+                    <a href="${imageInfo.url}" download="${imageInfo.filename}" 
+                       class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors">
+                        <i class="fas fa-download mr-2"></i>Descargar
+                    </a>
+                    <button onclick="copyToClipboard('${imageInfo.url}'); showToast('URL copiada al portapapeles', 'success')" 
+                            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors">
+                        <i class="fas fa-link mr-2"></i>Copiar URL
+                    </button>
+                    <button onclick="closeStockimgModal()" 
+                            class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors">
+                        Cerrar
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    modal.style.display = 'flex';
+}
+
+function closeStockimgModal() {
+    const modal = document.getElementById('stockimgModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+// Función auxiliar para copiar texto (si no existe ya)
+function copyToClipboard(text) {
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(text);
+    } else {
+        // Fallback para navegadores que no soportan clipboard API
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+    }
 }

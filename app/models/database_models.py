@@ -12,6 +12,9 @@ class Listing(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     
+    # Relación con usuario
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    
     # Información básica del producto
     product_name = Column(String(500), nullable=False, index=True)
     category = Column(String(100), nullable=False)
@@ -44,6 +47,7 @@ class Listing(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     
     # Relaciones
+    user = relationship("User", back_populates="listings")
     agent_results = relationship("AgentResult", back_populates="listing", cascade="all, delete-orphan")
     listing_versions = relationship("ListingVersion", back_populates="listing", cascade="all, delete-orphan")
 

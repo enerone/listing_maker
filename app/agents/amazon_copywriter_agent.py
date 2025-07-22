@@ -365,15 +365,21 @@ INSTRUCCIONES ESPECÍFICAS:
 - Incluye keywords naturalmente en cada punto
 
 4. PROMPTS PARA IMÁGENES IA:
-Crea cinco prompts diferentes para generar imágenes mediante IA, asegurando variedad y atractivo visual:
+Crea cinco prompts específicos para generar imágenes mediante IA de ESTE PRODUCTO específico. 
+IMPORTANTE: Cada prompt debe incluir el nombre exacto del producto, sus características específicas y detalles únicos mencionados en el input del usuario. NO uses descripciones genéricas.
 
-- Imagen principal: Producto claramente visible en primer plano, sobre fondo blanco, iluminación profesional, resaltando detalles y calidad
-- Imagen contextual: Producto siendo utilizado en un contexto cotidiano realista, mostrando claramente su funcionalidad y beneficios en un ambiente hogareño o natural según aplique
-- Imagen de lifestyle: Muestra el producto siendo usado por personas que reflejan al público objetivo, con una atmósfera aspiracional y positiva
-- Imagen detalle: Primer plano mostrando texturas, materiales y acabados del producto, destacando calidad y diseño
-- Imagen comparativa o demostrativa: Ilustra una ventaja clave del producto mediante una comparación visual o demostración gráfica clara y fácil de entender
+INSTRUCCIONES para cada prompt:
+- Imagen principal: Incluye el nombre del producto + características físicas específicas + "sobre fondo blanco limpio, iluminación profesional de estudio, composición centrada, vista completa mostrando [materiales/acabados específicos del producto], fotografía de producto para e-commerce"
 
-Cada prompt debe ser breve pero suficientemente descriptivo para que la IA produzca imágenes realistas, profesionales y atractivas para compradores potenciales en Amazon.
+- Imagen contextual: Incluye el nombre del producto + "siendo utilizado en [contexto específico de uso del producto], persona usando el producto de manera práctica, ambiente [apropiado para este producto específico], iluminación natural, mostrando claramente [beneficio principal específico] en acción, escena realista"
+
+- Imagen de lifestyle: Incluye "[público objetivo específico] disfrutando [nombre del producto] en [ambiente específico para este producto], atmósfera positiva, ambiente de alta calidad, personas felices usando [producto específico], estilo de vida premium, fotografía profesional"
+
+- Imagen detalle: Incluye "Primer plano macro de [nombre del producto] mostrando [texturas/materiales específicos mencionados], acabados de [materiales específicos], detalles de construcción únicos, craftsmanship premium, [características distintivas visibles], calidad superior evidente"
+
+- Imagen comparativa: Incluye "[nombre del producto] demostrando [ventaja específica mencionada], comparación visual clara de [beneficio específico], antes y después de usar [producto específico], [mejora específica] visible, gráfico profesional que ilustra [beneficio principal]"
+
+Sustituye todos los corchetes con información real y específica del producto proporcionado en el input.
 
 5. KEYWORDS BACKEND (máximo 250 caracteres):
 - Sinónimos y variaciones de las keywords principales

@@ -21,7 +21,8 @@ class ListingService:
         self, 
         product_input: ProductInput, 
         processed_listing: ProcessedListing,
-        agent_responses: Dict[str, AgentResponse]
+        agent_responses: Dict[str, AgentResponse],
+        user_id: int
     ) -> Listing:
         """
         Crea un nuevo listing en la base de datos
@@ -44,7 +45,8 @@ class ListingService:
             processing_notes=processed_listing.processing_notes,
             recommendations=processed_listing.recommendations,
             status="draft",
-            version=1
+            version=1,
+            user_id=user_id
         )
         
         self.db.add(db_listing)

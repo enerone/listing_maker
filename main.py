@@ -1,8 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, FileResponse
+from fastapi.responses import HTMLResponse, FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from fastapi import Request
 import logging
 from contextlib import asynccontextmanager
 import os
@@ -10,6 +11,7 @@ from dotenv import load_dotenv
 
 from app.api.listings import router as listings_router
 from app.api.listing_generator import router as generator_router
+from app.api.auth import router as auth_router
 from app.database import create_tables
 from app.services.ollama_service import get_ollama_service
 
@@ -132,59 +134,121 @@ async def debug_frontend():
 @app.get("/", response_class=HTMLResponse)
 async def root():
     """
-    Página principal - Dashboard del sistema
+    Página principal - Bienvenida pública o redirige a dashboard si está logueado
     """
-    if os.path.exists("frontend/index.html"):
-        with open("frontend/index.html", "r", encoding="utf-8") as f:
+    if os.path.exists("frontend/welcome.html"):
+        with open("frontend/welcome.html", "r", encoding="utf-8") as f:
             return HTMLResponse(content=f.read())
-    return {"error": "Dashboard not found"}
+    return {"error": "Welcome page not found"}
 
 @app.get("/dashboard", response_class=HTMLResponse)
 async def dashboard_redirect():
     """
-    Redirige al dashboard principal
+    Dashboard principal - Requiere autenticación (verificada en el frontend)
     """
     if os.path.exists("frontend/index.html"):
         with open("frontend/index.html", "r", encoding="utf-8") as f:
-            return HTMLResponse(content=f.read())
+            content = f.read()
+            # Inyectar script de verificación de autenticación
+            auth_check = """
+            <script>
+                // Verificar autenticación al cargar el dashboard
+                const token = localStorage.getItem('access_token');
+                if (!token) {
+                    alert('⚠️ Necesitas iniciar sesión para acceder al dashboard');
+                    window.location.href = '/auth';
+                }
+            </script>
+            """
+            # Inyectar el script antes del cierre del body
+            content = content.replace('</body>', auth_check + '</body>')
+            return HTMLResponse(content=content)
     return {"error": "Dashboard not found"}
 
 @app.get("/frontend/index.html", response_class=HTMLResponse)
 async def frontend_dashboard():
     """
-    Dashboard accesible desde enlaces internos
+    Dashboard accesible desde enlaces internos - Requiere autenticación
     """
     if os.path.exists("frontend/index.html"):
         with open("frontend/index.html", "r", encoding="utf-8") as f:
-            return HTMLResponse(content=f.read())
+            content = f.read()
+            # Inyectar script de verificación de autenticación
+            auth_check = """
+            <script>
+                const token = localStorage.getItem('access_token');
+                if (!token) {
+                    alert('⚠️ Necesitas iniciar sesión para acceder al dashboard');
+                    window.location.href = '/auth';
+                }
+            </script>
+            """
+            content = content.replace('</body>', auth_check + '</body>')
+            return HTMLResponse(content=content)
     return {"error": "Dashboard not found"}
 
 @app.get("/frontend/listings.html", response_class=HTMLResponse)
 async def frontend_listings():
     """
-    Página de listings accesible desde enlaces internos
+    Página de listings accesible desde enlaces internos - Requiere autenticación
     """
     if os.path.exists("frontend/listings.html"):
         with open("frontend/listings.html", "r", encoding="utf-8") as f:
-            return HTMLResponse(content=f.read())
+            content = f.read()
+            # Inyectar script de verificación de autenticación
+            auth_check = """
+            <script>
+                const token = localStorage.getItem('access_token');
+                if (!token) {
+                    alert('⚠️ Necesitas iniciar sesión para acceder a los listings');
+                    window.location.href = '/auth';
+                }
+            </script>
+            """
+            content = content.replace('</body>', auth_check + '</body>')
+            return HTMLResponse(content=content)
     return {"error": "Listings page not found"}
 
 # === RUTAS DE ARCHIVOS ESTÁTICOS ===
 
 @app.get("/listings.html", response_class=HTMLResponse)
 async def get_listings():
-    """Servir página de listings"""
+    """Servir página de listings - Requiere autenticación"""
     if os.path.exists("frontend/listings.html"):
         with open("frontend/listings.html", "r", encoding="utf-8") as f:
-            return HTMLResponse(content=f.read())
+            content = f.read()
+            # Inyectar script de verificación de autenticación
+            auth_check = """
+            <script>
+                const token = localStorage.getItem('access_token');
+                if (!token) {
+                    alert('⚠️ Necesitas iniciar sesión para acceder a los listings');
+                    window.location.href = '/auth';
+                }
+            </script>
+            """
+            content = content.replace('</body>', auth_check + '</body>')
+            return HTMLResponse(content=content)
     return {"error": "Listings page not found"}
 
 @app.get("/index.html", response_class=HTMLResponse)
 async def get_index():
-    """Servir página principal (index.html)"""
+    """Servir página principal (index.html) - Requiere autenticación"""
     if os.path.exists("frontend/index.html"):
         with open("frontend/index.html", "r", encoding="utf-8") as f:
-            return HTMLResponse(content=f.read())
+            content = f.read()
+            # Inyectar script de verificación de autenticación
+            auth_check = """
+            <script>
+                const token = localStorage.getItem('access_token');
+                if (!token) {
+                    alert('⚠️ Necesitas iniciar sesión para acceder al dashboard');
+                    window.location.href = '/auth';
+                }
+            </script>
+            """
+            content = content.replace('</body>', auth_check + '</body>')
+            return HTMLResponse(content=content)
     return {"error": "Index page not found"}
 
 @app.get("/listing-details.html", response_class=HTMLResponse)
@@ -194,6 +258,30 @@ async def get_listing_details():
         with open("frontend/listing-details.html", "r", encoding="utf-8") as f:
             return HTMLResponse(content=f.read())
     return {"error": "Listing details page not found"}
+
+@app.get("/auth", response_class=HTMLResponse)
+async def get_auth_page():
+    """Servir página de autenticación"""
+    if os.path.exists("frontend/auth.html"):
+        with open("frontend/auth.html", "r", encoding="utf-8") as f:
+            return HTMLResponse(content=f.read())
+    return {"error": "Auth page not found"}
+
+@app.get("/auth.html", response_class=HTMLResponse)
+async def get_auth_html():
+    """Servir página de autenticación"""
+    if os.path.exists("frontend/auth.html"):
+        with open("frontend/auth.html", "r", encoding="utf-8") as f:
+            return HTMLResponse(content=f.read())
+    return {"error": "Auth page not found"}
+
+@app.get("/welcome", response_class=HTMLResponse)
+async def get_welcome():
+    """Servir página de bienvenida"""
+    if os.path.exists("frontend/welcome.html"):
+        with open("frontend/welcome.html", "r", encoding="utf-8") as f:
+            return HTMLResponse(content=f.read())
+    return {"error": "Welcome page not found"}
 
 # === ARCHIVOS JAVASCRIPT Y CSS ===
 
@@ -218,6 +306,13 @@ async def get_app_js():
         return FileResponse("frontend/app.js", media_type="application/javascript")
     return {"error": "File not found"}
 
+@app.get("/auth.js")
+async def get_auth_js():
+    """Servir auth.js directamente"""
+    if os.path.exists("frontend/auth.js"):
+        return FileResponse("frontend/auth.js", media_type="application/javascript")
+    return {"error": "File not found"}
+
 @app.get("/styles.css")
 async def get_styles_css():
     """Servir styles.css directamente"""
@@ -227,6 +322,7 @@ async def get_styles_css():
 
 # === INCLUIR ROUTERS DE LA API ===
 
+app.include_router(auth_router, prefix="/auth")
 app.include_router(listings_router, prefix="/listings")
 app.include_router(generator_router)
 

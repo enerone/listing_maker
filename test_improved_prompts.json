@@ -1,0 +1,37 @@
+{
+  "producto_antes": {
+    "nombre": "Audífonos Gaming RGB Profesionales con Sonido 7.1 Surround",
+    "descripcion": "Audífonos gaming de alta calidad con iluminación RGB personalizable, sonido envolvente 7.1, micrófono con cancelación de ruido y diseño ergonómico para sesiones de juego prolongadas",
+    "prompts_genericos_anteriores": {
+      "main_product": "High-quality product on white background, professional lighting, clean composition, detailed view showing premium materials and finishes",
+      "contextual": "Product being used in realistic home environment, natural lighting, showing practical application and benefits in everyday setting",
+      "lifestyle": "People using product in aspirational lifestyle setting, positive atmosphere, high-end environment, professional photography style",
+      "detail": "Close-up macro shot of product textures, materials, and premium finishes, highlighting quality craftsmanship and attention to detail",
+      "comparative": "Before and after comparison showing product benefits, clear visual demonstration of key advantages, professional graphic design style"
+    }
+  },
+  "producto_despues_con_mejoras": {
+    "prompts_especificos_mejorados": {
+      "main_product": "Audífonos Gaming RGB Profesionales con Sonido 7.1 Surround con iluminación RGB brillante visible, diadema ergonómica negra, auriculares acolchados, micrófono retráctil, sobre fondo blanco limpio, iluminación profesional de estudio, composición centrada, vista completa mostrando acabados gaming premium y efectos RGB, fotografía de producto para e-commerce",
+      "contextual": "Audífonos Gaming RGB Profesionales con Sonido 7.1 Surround siendo utilizados por gamer joven en setup gaming con múltiples monitores, persona concentrada jugando videojuegos competitivos, ambiente de gaming room con luces RGB ambiente, iluminación natural mezclada con RGB, mostrando claramente la experiencia inmersiva de gaming 7.1 en acción, escena realista de gaming session",
+      "lifestyle": "Jóvenes gamers disfrutando Audífonos Gaming RGB Profesionales con Sonido 7.1 Surround en torneo de esports aspiracional, atmósfera competitiva y profesional, ambiente gaming de alta calidad con setup premium, personas concentradas y emocionadas usando los audífonos gaming, estilo de vida gamer premium, fotografía profesional que transmite la pasión por gaming competitivo",
+      "detail": "Primer plano macro de Audífonos Gaming RGB Profesionales mostrando textura de cuero sintético premium, materiales acolchados memory foam visibles, acabados gaming con detalles RGB y controles táctiles, detalles de construcción gaming robusta, craftsmanship premium gaming, efectos de iluminación RGB personalizable visible, calidad superior de drivers 7.1 evidente",
+      "comparative": "Audífonos Gaming RGB Profesionales con Sonido 7.1 Surround demostrando su ventaja en cancelación de ruido vs audífonos estándar, comparación visual clara de immersión sonora 7.1 vs estéreo tradicional, antes y después de usar auriculares gaming premium, diferencia en experiencia gaming competitiva visible, gráfico profesional que ilustra las mejoras en rendimiento gaming y comunicación en equipo"
+    }
+  },
+  "mejoras_implementadas": [
+    "✅ Nombre específico del producto incluido en cada prompt",
+    "✅ Características distintivas mencionadas (RGB, 7.1 Surround, gaming, ergonómico)",
+    "✅ Contexto de uso específico (gaming, esports, sesiones prolongadas)",
+    "✅ Materiales específicos (memory foam, cuero sintético)",
+    "✅ Público objetivo específico (gamers jóvenes, jugadores competitivos)",
+    "✅ Beneficios específicos (cancelación de ruido, inmersión 7.1, comunicación en equipo)",
+    "✅ Ambiente apropiado (gaming room, setup RGB, torneos esports)",
+    "✅ Detalles técnicos (drivers 7.1, controles táctiles, micrófono retráctil)"
+  ],
+  "diferencias_clave": {
+    "antes": "Prompts genéricos que podrían servir para cualquier producto",
+    "despues": "Prompts específicos que capturan la esencia única del producto gaming",
+    "beneficio": "Las imágenes generadas ahora incluirán elementos específicos del gaming como RGB, setups, contexto competitivo, etc."
+  }
+}

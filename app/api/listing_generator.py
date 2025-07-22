@@ -8,6 +8,7 @@ from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
 import logging
 import json
+import os
 from datetime import datetime
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -61,11 +62,38 @@ listing_sessions = {}
 
 @router.get("/generator", response_class=HTMLResponse)
 async def listing_generator_page(request: Request):
-    """Página principal del generador de listings"""
-    return templates.TemplateResponse("listing_generator.html", {
-        "request": request,
-        "title": "Generador de Listings Amazon"
-    })
+    """Página principal del generador de listings - Requiere autenticación"""
+    # Usar el sistema de templates de Jinja2 para renderizar correctamente las variables
+    try:
+        # Renderizar el template con las variables necesarias
+        return templates.TemplateResponse("listing_generator.html", {
+            "request": request,
+            "title": "🚀 Generador de Listings Amazon"
+        })
+        
+    except Exception as e:
+        logger.error(f"Error renderizando template: {str(e)}")
+        # Fallback simple en caso de error
+        error_html = """
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>🚀 Generador de Listings Amazon</title>
+        </head>
+        <body>
+            <h1>Error cargando el generador</h1>
+            <p>Por favor, intenta de nuevo más tarde.</p>
+            <script>
+                const token = localStorage.getItem('access_token');
+                if (!token) {
+                    alert('⚠️ Necesitas iniciar sesión para acceder al generador');
+                    window.location.href = '/auth';
+                }
+            </script>
+        </body>
+        </html>
+        """
+        return HTMLResponse(content=error_html)
 
 @router.post("/api/generate-keywords")
 async def generate_keywords(request: KeywordGenerationRequest):
@@ -122,7 +150,10 @@ async def generate_keywords(request: KeywordGenerationRequest):
         }
 
 @router.post("/api/generate-listing")
-async def generate_listing(request: ListingGenerationRequest, db: AsyncSession = Depends(get_db)):
+async def generate_listing(
+    request: ListingGenerationRequest, 
+    db: AsyncSession = Depends(get_db)
+):
     """Genera el listing completo usando Amazon Copywriter Agent y lo guarda en la base de datos"""
     try:
         logger.info(f"🖋️ Generando listing para: {request.title}")
@@ -294,7 +325,8 @@ async def generate_listing(request: ListingGenerationRequest, db: AsyncSession =
                 db_listing = await listing_service.create_listing(
                     product_input, 
                     processed_listing, 
-                    agent_responses
+                    agent_responses,
+                    1  # Usuario admin por defecto
                 )
                 
                 # Actualizar sesión con ID de base de datos
@@ -742,7 +774,10 @@ async def _generate_suggestions(listing_data: Dict[str, Any], product_data: Dict
 # === ENDPOINT PARA GUARDAR LISTING ===
 
 @router.post("/api/save-listing")
-async def save_listing(request: SaveListingRequest, db: AsyncSession = Depends(get_db)):
+async def save_listing(
+    request: SaveListingRequest, 
+    db: AsyncSession = Depends(get_db)
+):
     """Guarda el listing actual de la sesión en la base de datos"""
     try:
         session_id = request.session_id
@@ -895,7 +930,8 @@ async def save_listing(request: SaveListingRequest, db: AsyncSession = Depends(g
             db_listing = await listing_service.create_listing(
                 product_input, 
                 processed_listing, 
-                agent_responses
+                agent_responses,
+                1  # Usuario admin por defecto
             )
             
             # Actualizar sesión con ID de base de datos

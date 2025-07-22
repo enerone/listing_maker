@@ -1345,6 +1345,13 @@ ${generatedListing.value.backend_keywords}
                 };
             }
         }).mount('#app');
+
+        // Verificación de autenticación
+        const token = localStorage.getItem('access_token');
+        if (!token) {
+            alert('⚠️ Necesitas iniciar sesión para acceder al generador');
+            window.location.href = '/auth';
+        }
     </script>
 </body>
 </html>

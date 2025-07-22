@@ -53,7 +53,7 @@ class OllamaService:
                         "num_predict": max_tokens or 1000
                     }
                 ),
-                timeout=60.0  # Aumentar timeout
+                timeout=120.0  # Aumentar timeout a 2 minutos para CPU
             )
             
             processing_time = (datetime.now() - start_time).total_seconds()
